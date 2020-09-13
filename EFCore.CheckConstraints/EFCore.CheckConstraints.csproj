@@ -3,7 +3,7 @@
   <PropertyGroup>
     <RootNamespace>EFCore</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>5.0.0-preview8</VersionPrefix>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
