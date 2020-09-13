@@ -21,12 +21,31 @@ namespace Microsoft.EntityFrameworkCore
             return optionsBuilder;
         }
 
+        public static DbContextOptionsBuilder UseDiscriminatorCheckConstraints(
+            [NotNull] this DbContextOptionsBuilder optionsBuilder , CultureInfo culture = null)
+        {
+            Check.NotNull(optionsBuilder, nameof(optionsBuilder));
+
+            var extension = (optionsBuilder.Options.FindExtension<CheckConstraintsOptionsExtension>() ?? new CheckConstraintsOptionsExtension())
+                .WithDiscriminatorCheckConstraintsEnabled(true);
+
+            ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
+
+            return optionsBuilder;
+        }
+
         public static DbContextOptionsBuilder UseAllCheckConstraints(
             [NotNull] this DbContextOptionsBuilder optionsBuilder, CultureInfo culture = null)
-            => optionsBuilder.UseEnumCheckConstraints();
+            => optionsBuilder
+                .UseEnumCheckConstraints()
+                .UseDiscriminatorCheckConstraints();
 
         public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder , CultureInfo culture = null)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseEnumCheckConstraints((DbContextOptionsBuilder)optionsBuilder,culture);
+
+        public static DbContextOptionsBuilder<TContext> UseDiscriminatorCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder , CultureInfo culture = null)
+            where TContext : DbContext
+            => (DbContextOptionsBuilder<TContext>)UseDiscriminatorCheckConstraints((DbContextOptionsBuilder)optionsBuilder,culture);
     }
 }

@@ -11,22 +11,35 @@ namespace EFCore.CheckConstraints.Internal
     {
         private DbContextOptionsExtensionInfo _info;
         private bool _enumCheckConstraintsEnabled;
+        private bool _discriminatorCheckConstraintsEnabled;
 
         public CheckConstraintsOptionsExtension() {}
 
         protected CheckConstraintsOptionsExtension([NotNull] CheckConstraintsOptionsExtension copyFrom)
-            => _enumCheckConstraintsEnabled = copyFrom._enumCheckConstraintsEnabled;
+        {
+            _enumCheckConstraintsEnabled = copyFrom._enumCheckConstraintsEnabled;
+            _discriminatorCheckConstraintsEnabled = copyFrom._discriminatorCheckConstraintsEnabled;
+        }
 
         public virtual DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
 
         protected virtual CheckConstraintsOptionsExtension Clone() => new CheckConstraintsOptionsExtension(this);
 
         public virtual bool AreEnumCheckConstraintsEnabled => _enumCheckConstraintsEnabled;
+        public virtual bool AreDiscriminatorCheckConstraintsEnabled => _discriminatorCheckConstraintsEnabled;
 
         public virtual CheckConstraintsOptionsExtension WithEnumCheckConstraintsEnabled(bool enumCheckConstraintsEnabled)
         {
             var clone = Clone();
             clone._enumCheckConstraintsEnabled = enumCheckConstraintsEnabled;
+            return clone;
+        }
+
+        public virtual CheckConstraintsOptionsExtension WithDiscriminatorCheckConstraintsEnabled(
+            bool discriminatorCheckConstraintsEnabled)
+        {
+            var clone = Clone();
+            clone._discriminatorCheckConstraintsEnabled = discriminatorCheckConstraintsEnabled;
             return clone;
         }
 
@@ -52,15 +65,23 @@ namespace EFCore.CheckConstraints.Internal
                 {
                     if (_logFragment == null)
                     {
-                        var builder = new StringBuilder("using check constraints");
+                        var builder = new StringBuilder("using check constraints (");
+                        var isFirst = true;
 
-                        if (Extension._enumCheckConstraintsEnabled)
+                        if (Extension.AreEnumCheckConstraintsEnabled)
                         {
-                            builder
-                                .Append(" (")
-                                .Append("enums")
-                                .Append(")");
+                            builder.Append("enums");
+                            isFirst = false;
                         }
+
+                        if (Extension.AreDiscriminatorCheckConstraintsEnabled)
+                        {
+                            if (!isFirst)
+                                builder.Append(", ");
+                            builder.Append("discriminators");
+                        }
+
+                        builder.Append(')');
 
                         _logFragment = builder.ToString();
                     }

@@ -3,6 +3,8 @@ using System.Linq;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
+using Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -144,7 +146,10 @@ namespace EFCore.CheckConstraints.Test
                 .GetRequiredService<IConventionSetBuilder>()
                 .CreateConventionSet();
 
-            conventionSet.ModelFinalizingConventions.Add(new EnumCheckConstraintConvention());
+            conventionSet.ModelFinalizingConventions.Add(
+                new EnumCheckConstraintConvention(
+                    new SqlServerSqlGenerationHelper(
+                        new RelationalSqlGenerationHelperDependencies())));
 
             return new ModelBuilder(conventionSet);
         }
