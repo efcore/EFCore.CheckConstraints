@@ -32,7 +32,8 @@ namespace EFCore.CheckConstraints.Internal
                 var discriminatorProperty = rootEntityType.GetDiscriminatorProperty();
                 var typeMapping = (RelationalTypeMapping)discriminatorProperty.FindTypeMapping();
                 var discriminatorColumnName = discriminatorProperty.GetColumnName();
-                if (typeMapping is null || discriminatorColumnName is null)
+                var tableName = rootEntityType.GetTableName();
+                if (typeMapping is null || discriminatorColumnName is null || tableName is null)
                 {
                     continue;
                 }
@@ -50,7 +51,7 @@ namespace EFCore.CheckConstraints.Internal
                 sql.Remove(sql.Length - 2, 2);
                 sql.Append(")");
 
-                var constraintName = $"CK_{rootEntityType.GetTableName()}_Discriminator_Constraint";
+                var constraintName = $"CK_{tableName}_Discriminator_Constraint";
                 rootEntityType.AddCheckConstraint(constraintName, sql.ToString());
             }
         }

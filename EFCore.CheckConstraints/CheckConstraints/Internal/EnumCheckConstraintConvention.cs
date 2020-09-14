@@ -25,6 +25,12 @@ namespace EFCore.CheckConstraints.Internal
 
             foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
             {
+                var tableName = entityType.GetTableName();
+                if (tableName is null)
+                {
+                    continue;
+                }
+
                 foreach (var property in entityType.GetDeclaredProperties())
                 {
                     var typeMapping = property.FindTypeMapping();
@@ -53,7 +59,7 @@ namespace EFCore.CheckConstraints.Internal
                         sql.Remove(sql.Length - 2, 2);
                         sql.Append(")");
 
-                        var constraintName = $"CK_{entityType.GetTableName()}_{columnName}_Enum_Constraint";
+                        var constraintName = $"CK_{tableName}_{columnName}_Enum_Constraint";
                         entityType.AddCheckConstraint(constraintName, sql.ToString());
                     }
                 }
