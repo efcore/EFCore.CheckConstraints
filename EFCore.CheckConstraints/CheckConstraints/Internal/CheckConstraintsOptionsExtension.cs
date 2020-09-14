@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -11,17 +12,22 @@ namespace EFCore.CheckConstraints.Internal
     {
         private DbContextOptionsExtensionInfo _info;
         private bool _enumCheckConstraintsEnabled;
+        private bool _discriminatorCheckConstraintsEnabled;
 
         public CheckConstraintsOptionsExtension() {}
 
         protected CheckConstraintsOptionsExtension([NotNull] CheckConstraintsOptionsExtension copyFrom)
-            => _enumCheckConstraintsEnabled = copyFrom._enumCheckConstraintsEnabled;
+        {
+            _enumCheckConstraintsEnabled = copyFrom._enumCheckConstraintsEnabled;
+            _discriminatorCheckConstraintsEnabled = copyFrom._discriminatorCheckConstraintsEnabled;
+        }
 
         public virtual DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
 
         protected virtual CheckConstraintsOptionsExtension Clone() => new CheckConstraintsOptionsExtension(this);
 
         public virtual bool AreEnumCheckConstraintsEnabled => _enumCheckConstraintsEnabled;
+        public virtual bool AreDiscriminatorCheckConstraintsEnabled => _discriminatorCheckConstraintsEnabled;
 
         public virtual CheckConstraintsOptionsExtension WithEnumCheckConstraintsEnabled(bool enumCheckConstraintsEnabled)
         {
@@ -30,18 +36,26 @@ namespace EFCore.CheckConstraints.Internal
             return clone;
         }
 
+        public virtual CheckConstraintsOptionsExtension WithDiscriminatorCheckConstraintsEnabled(
+            bool discriminatorCheckConstraintsEnabled)
+        {
+            var clone = Clone();
+            clone._discriminatorCheckConstraintsEnabled = discriminatorCheckConstraintsEnabled;
+            return clone;
+        }
+
         public void Validate(IDbContextOptions options) {}
 
         public void ApplyServices(IServiceCollection services)
             => services.AddEntityFrameworkCheckConstraints();
 
-        sealed class ExtensionInfo : DbContextOptionsExtensionInfo
+        internal sealed class ExtensionInfo : DbContextOptionsExtensionInfo
         {
-            string _logFragment;
+            private string _logFragment;
 
             public ExtensionInfo(IDbContextOptionsExtension extension) : base(extension) {}
 
-            new CheckConstraintsOptionsExtension Extension
+            private new CheckConstraintsOptionsExtension Extension
                 => (CheckConstraintsOptionsExtension)base.Extension;
 
             public override bool IsDatabaseProvider => false;
@@ -52,15 +66,23 @@ namespace EFCore.CheckConstraints.Internal
                 {
                     if (_logFragment == null)
                     {
-                        var builder = new StringBuilder("using check constraints");
+                        var builder = new StringBuilder("using check constraints (");
+                        var isFirst = true;
 
-                        if (Extension._enumCheckConstraintsEnabled)
+                        if (Extension.AreEnumCheckConstraintsEnabled)
                         {
-                            builder
-                                .Append(" (")
-                                .Append("enums")
-                                .Append(")");
+                            builder.Append("enums");
+                            isFirst = false;
                         }
+
+                        if (Extension.AreDiscriminatorCheckConstraintsEnabled)
+                        {
+                            if (!isFirst)
+                                builder.Append(", ");
+                            builder.Append("discriminators");
+                        }
+
+                        builder.Append(')');
 
                         _logFragment = builder.ToString();
                     }
@@ -70,11 +92,17 @@ namespace EFCore.CheckConstraints.Internal
             }
 
             public override long GetServiceProviderHashCode()
-                => Extension._enumCheckConstraintsEnabled.GetHashCode();
+                => HashCode.Combine(
+                    Extension._enumCheckConstraintsEnabled.GetHashCode(),
+                    Extension._discriminatorCheckConstraintsEnabled.GetHashCode());
 
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
-                => debugInfo["CheckConstraints:Enums"]
+            {
+                debugInfo["CheckConstraints:Enums"]
                     = Extension._enumCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
+                debugInfo["CheckConstraints:Discriminators"]
+                    = Extension._discriminatorCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
+            }
         }
     }
 }

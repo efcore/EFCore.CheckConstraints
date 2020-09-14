@@ -3,9 +3,15 @@ using System.Linq;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
+using Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+
+// ReSharper disable UnusedAutoPropertyAccessor.Local
+// ReSharper disable UnusedMember.Local
+// ReSharper disable UnusedMember.Global
 
 namespace EFCore.CheckConstraints.Test
 {
@@ -47,7 +53,7 @@ namespace EFCore.CheckConstraints.Test
         }
 
         [Fact]
-        public void Should_not_generate_gheck_constraint_for_empty_enum()
+        public void Should_not_generate_check_constraint_for_empty_enum()
         {
             var builder = CreateBuilder();
             builder.Entity<Seller>()
@@ -140,11 +146,11 @@ namespace EFCore.CheckConstraints.Test
 
         private ModelBuilder CreateBuilder()
         {
-            var conventionSet = SqlServerTestHelpers.Instance.CreateContextServices()
-                .GetRequiredService<IConventionSetBuilder>()
-                .CreateConventionSet();
+            var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
-            conventionSet.ModelFinalizingConventions.Add(new EnumCheckConstraintConvention());
+            conventionSet.ModelFinalizingConventions.Add(
+                new EnumCheckConstraintConvention(serviceProvider.GetRequiredService<ISqlGenerationHelper>()));
 
             return new ModelBuilder(conventionSet);
         }
