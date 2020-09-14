@@ -9,7 +9,7 @@ namespace Microsoft.EntityFrameworkCore
     public static class CheckConstraintsExtensions
     {
         public static DbContextOptionsBuilder UseEnumCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder , CultureInfo culture = null)
+            [NotNull] this DbContextOptionsBuilder optionsBuilder)
         {
             Check.NotNull(optionsBuilder, nameof(optionsBuilder));
 
@@ -22,7 +22,7 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         public static DbContextOptionsBuilder UseDiscriminatorCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder , CultureInfo culture = null)
+            [NotNull] this DbContextOptionsBuilder optionsBuilder)
         {
             Check.NotNull(optionsBuilder, nameof(optionsBuilder));
 
@@ -35,17 +35,17 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         public static DbContextOptionsBuilder UseAllCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder, CultureInfo culture = null)
+            [NotNull] this DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder
                 .UseEnumCheckConstraints()
                 .UseDiscriminatorCheckConstraints();
 
-        public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder , CultureInfo culture = null)
+        public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
-            => (DbContextOptionsBuilder<TContext>)UseEnumCheckConstraints((DbContextOptionsBuilder)optionsBuilder,culture);
+            => (DbContextOptionsBuilder<TContext>)UseEnumCheckConstraints((DbContextOptionsBuilder)optionsBuilder);
 
-        public static DbContextOptionsBuilder<TContext> UseDiscriminatorCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder , CultureInfo culture = null)
+        public static DbContextOptionsBuilder<TContext> UseDiscriminatorCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
-            => (DbContextOptionsBuilder<TContext>)UseDiscriminatorCheckConstraints((DbContextOptionsBuilder)optionsBuilder,culture);
+            => (DbContextOptionsBuilder<TContext>)UseDiscriminatorCheckConstraints((DbContextOptionsBuilder)optionsBuilder);
     }
 }

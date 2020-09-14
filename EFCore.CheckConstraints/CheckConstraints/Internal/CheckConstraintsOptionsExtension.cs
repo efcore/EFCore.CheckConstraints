@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -91,11 +92,17 @@ namespace EFCore.CheckConstraints.Internal
             }
 
             public override long GetServiceProviderHashCode()
-                => Extension._enumCheckConstraintsEnabled.GetHashCode();
+                => HashCode.Combine(
+                    Extension._enumCheckConstraintsEnabled.GetHashCode(),
+                    Extension._discriminatorCheckConstraintsEnabled.GetHashCode());
 
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
-                => debugInfo["CheckConstraints:Enums"]
+            {
+                debugInfo["CheckConstraints:Enums"]
                     = Extension._enumCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
+                debugInfo["CheckConstraints:Discriminators"]
+                    = Extension._discriminatorCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
+            }
         }
     }
 }

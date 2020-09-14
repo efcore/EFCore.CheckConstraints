@@ -31,7 +31,8 @@ namespace EFCore.CheckConstraints.Internal
                     var propertyType = (property.PropertyInfo ?? (MemberInfo)property.FieldInfo)?.GetMemberType();
                     if ((propertyType?.IsEnum ?? false)
                         && typeMapping != null
-                        && !propertyType.IsDefined(typeof(FlagsAttribute), true))
+                        && !propertyType.IsDefined(typeof(FlagsAttribute), true)
+                        && property.GetColumnName() is string columnName)
                     {
                         var enumValues = Enum.GetValues(propertyType);
                         if (enumValues.Length <= 0)
@@ -52,7 +53,7 @@ namespace EFCore.CheckConstraints.Internal
                         sql.Remove(sql.Length - 2, 2);
                         sql.Append(")");
 
-                        var constraintName = $"CK_{entityType.GetTableName()}_{property.GetColumnName()}_Enum_Constraint";
+                        var constraintName = $"CK_{entityType.GetTableName()}_{columnName}_Enum_Constraint";
                         entityType.AddCheckConstraint(constraintName, sql.ToString());
                     }
                 }

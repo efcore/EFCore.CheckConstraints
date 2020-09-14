@@ -31,7 +31,8 @@ namespace EFCore.CheckConstraints.Internal
             {
                 var discriminatorProperty = rootEntityType.GetDiscriminatorProperty();
                 var typeMapping = (RelationalTypeMapping)discriminatorProperty.FindTypeMapping();
-                if (typeMapping is null)
+                var discriminatorColumnName = discriminatorProperty.GetColumnName();
+                if (typeMapping is null || discriminatorColumnName is null)
                 {
                     continue;
                 }

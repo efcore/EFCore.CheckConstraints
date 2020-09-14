@@ -146,14 +146,11 @@ namespace EFCore.CheckConstraints.Test
 
         private ModelBuilder CreateBuilder()
         {
-            var conventionSet = SqlServerTestHelpers.Instance.CreateContextServices()
-                .GetRequiredService<IConventionSetBuilder>()
-                .CreateConventionSet();
+            var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
             conventionSet.ModelFinalizingConventions.Add(
-                new EnumCheckConstraintConvention(
-                    new SqlServerSqlGenerationHelper(
-                        new RelationalSqlGenerationHelperDependencies())));
+                new EnumCheckConstraintConvention(serviceProvider.GetRequiredService<ISqlGenerationHelper>()));
 
             return new ModelBuilder(conventionSet);
         }
