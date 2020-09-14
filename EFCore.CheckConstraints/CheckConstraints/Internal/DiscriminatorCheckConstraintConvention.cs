@@ -13,7 +13,7 @@ namespace EFCore.CheckConstraints.Internal
     /// </summary>
     public class DiscriminatorCheckConstraintConvention : IModelFinalizingConvention
     {
-        readonly ISqlGenerationHelper _sqlGenerationHelper;
+        private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
         public DiscriminatorCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
             => _sqlGenerationHelper = sqlGenerationHelper;

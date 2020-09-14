@@ -48,13 +48,13 @@ namespace EFCore.CheckConstraints.Internal
         public void ApplyServices(IServiceCollection services)
             => services.AddEntityFrameworkCheckConstraints();
 
-        sealed class ExtensionInfo : DbContextOptionsExtensionInfo
+        internal sealed class ExtensionInfo : DbContextOptionsExtensionInfo
         {
-            string _logFragment;
+            private string _logFragment;
 
             public ExtensionInfo(IDbContextOptionsExtension extension) : base(extension) {}
 
-            new CheckConstraintsOptionsExtension Extension
+            private new CheckConstraintsOptionsExtension Extension
                 => (CheckConstraintsOptionsExtension)base.Extension;
 
             public override bool IsDatabaseProvider => false;

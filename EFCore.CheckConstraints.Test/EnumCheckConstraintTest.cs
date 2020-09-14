@@ -9,6 +9,10 @@ using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Local
+// ReSharper disable UnusedMember.Local
+// ReSharper disable UnusedMember.Global
+
 namespace EFCore.CheckConstraints.Test
 {
     public class EnumCheckConstraintConventionTest
@@ -49,7 +53,7 @@ namespace EFCore.CheckConstraints.Test
         }
 
         [Fact]
-        public void Should_not_generate_gheck_constraint_for_empty_enum()
+        public void Should_not_generate_check_constraint_for_empty_enum()
         {
             var builder = CreateBuilder();
             builder.Entity<Seller>()

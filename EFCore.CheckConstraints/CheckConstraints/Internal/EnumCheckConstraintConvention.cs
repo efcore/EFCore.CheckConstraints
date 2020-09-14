@@ -13,7 +13,7 @@ namespace EFCore.CheckConstraints.Internal
     /// </summary>
     public class EnumCheckConstraintConvention : IModelFinalizingConvention
     {
-        readonly ISqlGenerationHelper _sqlGenerationHelper;
+        private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
         public EnumCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
             => _sqlGenerationHelper = sqlGenerationHelper;

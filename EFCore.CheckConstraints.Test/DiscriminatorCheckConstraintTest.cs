@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+// ReSharper disable ClassNeverInstantiated.Local
+
+// ReSharper disable UnusedAutoPropertyAccessor.Local
+// ReSharper disable UnusedMember.Local
+// ReSharper disable UnusedMember.Global
 
 namespace EFCore.CheckConstraints.Test
 {
@@ -26,13 +31,13 @@ namespace EFCore.CheckConstraints.Test
             Assert.Equal("[Discriminator] IN (N'Child', N'Parent')", checkConstraint.Sql);
         }
 
-        class Parent
+        private class Parent
         {
             public int Id { get; set; }
             public string Discriminator { get; set; }
         }
 
-        class Child : Parent
+        private class Child : Parent
         {
             public string ChildProperty { get; set; }
         }

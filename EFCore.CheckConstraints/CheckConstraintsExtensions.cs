@@ -14,7 +14,7 @@ namespace Microsoft.EntityFrameworkCore
             Check.NotNull(optionsBuilder, nameof(optionsBuilder));
 
             var extension = (optionsBuilder.Options.FindExtension<CheckConstraintsOptionsExtension>() ?? new CheckConstraintsOptionsExtension())
-                .WithEnumCheckConstraintsEnabled(true);
+                .WithEnumCheckConstraintsEnabled(enumCheckConstraintsEnabled: true);
 
             ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
@@ -27,7 +27,7 @@ namespace Microsoft.EntityFrameworkCore
             Check.NotNull(optionsBuilder, nameof(optionsBuilder));
 
             var extension = (optionsBuilder.Options.FindExtension<CheckConstraintsOptionsExtension>() ?? new CheckConstraintsOptionsExtension())
-                .WithDiscriminatorCheckConstraintsEnabled(true);
+                .WithDiscriminatorCheckConstraintsEnabled(discriminatorCheckConstraintsEnabled: true);
 
             ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 

@@ -8,8 +8,8 @@ namespace EFCore.CheckConstraints.Internal
 {
     public class CheckConstraintsConventionSetPlugin : IConventionSetPlugin
     {
-        readonly IDbContextOptions _options;
-        readonly ISqlGenerationHelper _sqlGenerationHelper;
+        private readonly IDbContextOptions _options;
+        private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
         public CheckConstraintsConventionSetPlugin(
             [NotNull] IDbContextOptions options,
