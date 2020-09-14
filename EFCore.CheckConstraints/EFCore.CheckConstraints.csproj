@@ -11,7 +11,7 @@
     <Description>Entity Framework Core for automatically adding check constraints in various scenarios.</Description>
     <Authors>Shay Rojansky</Authors>
     <Copyright>Copyright 2020 © Shay Rojansky</Copyright>
-    <PackageTags>Entity Framework Core;entity-framework-core;ef;efcore;orm;sql;postgresql;npgsql</PackageTags>
+    <PackageTags>Entity Framework Core;entity-framework-core;ef;efcore;orm;sql;constraints</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/efcore/EFCore.CheckConstraints</RepositoryUrl>
