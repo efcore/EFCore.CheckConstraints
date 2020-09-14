@@ -30,14 +30,19 @@ namespace EFCore.CheckConstraints.Internal
                 .Select(g => (g.Key, g.Select(e => e.GetDiscriminatorValue()))))
             {
                 var discriminatorProperty = rootEntityType.GetDiscriminatorProperty();
+                var typeMapping = (RelationalTypeMapping)discriminatorProperty.FindTypeMapping();
+                if (typeMapping is null)
+                {
+                    continue;
+                }
+
                 sql.Clear();
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(discriminatorProperty.GetColumnName()));
                 sql.Append(" IN (");
-                foreach (var discriminatorValue in discriminatorValues)
+                foreach (var discriminatorValue in discriminatorValues.Where(v => v != null))
                 {
-                    var value = ((RelationalTypeMapping)discriminatorProperty.FindTypeMapping())
-                        .GenerateSqlLiteral(discriminatorValue);
+                    var value = typeMapping.GenerateSqlLiteral(discriminatorValue);
                     sql.Append($"{value}, ");
                 }
 
