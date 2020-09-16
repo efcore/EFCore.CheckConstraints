@@ -19,7 +19,5 @@ namespace Microsoft.EntityFrameworkCore.TestUtilities
 
         public override void UseProviderOptions(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(new SqlConnection("Database=DummyDatabase"));
-
-        public override LoggingDefinitions LoggingDefinitions { get; } = new SqlServerLoggingDefinitions();
     }
 }
