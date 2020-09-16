@@ -59,7 +59,7 @@ namespace EFCore.CheckConstraints.Internal
                         sql.Remove(sql.Length - 2, 2);
                         sql.Append(")");
 
-                        var constraintName = $"CK_{tableName}_{columnName}_Enum_Constraint";
+                        var constraintName = $"CK_{tableName}_{columnName}_Enum";
                         entityType.AddCheckConstraint(constraintName, sql.ToString());
                     }
                 }

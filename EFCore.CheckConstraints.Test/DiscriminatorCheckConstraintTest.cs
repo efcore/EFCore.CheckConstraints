@@ -26,7 +26,7 @@ namespace EFCore.CheckConstraints.Test
 
             var checkConstraint = Assert.Single(model.FindEntityType(typeof(Parent)).GetCheckConstraints());
             Assert.NotNull(checkConstraint);
-            Assert.Equal("CK_Parent_Discriminator_Constraint", checkConstraint.Name);
+            Assert.Equal("CK_Parent_Discriminator", checkConstraint.Name);
             Assert.Equal("[Discriminator] IN (N'Child', N'Parent')", checkConstraint.Sql);
         }
 

@@ -51,7 +51,7 @@ namespace EFCore.CheckConstraints.Internal
                 sql.Remove(sql.Length - 2, 2);
                 sql.Append(")");
 
-                var constraintName = $"CK_{tableName}_Discriminator_Constraint";
+                var constraintName = $"CK_{tableName}_Discriminator";
                 rootEntityType.AddCheckConstraint(constraintName, sql.ToString());
             }
         }

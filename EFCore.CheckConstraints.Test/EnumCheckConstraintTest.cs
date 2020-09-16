@@ -28,10 +28,10 @@ namespace EFCore.CheckConstraints.Test
 
             var checkConstraint = model.FindEntityType(typeof(Order))
                 .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Order_OrderStatus_Enum_Constraint");
+                .FirstOrDefault(constraint => constraint.Name == "CK_Order_OrderStatus_Enum");
 
             Assert.NotNull(checkConstraint);
-            Assert.Equal("CK_Order_OrderStatus_Enum_Constraint", checkConstraint.Name);
+            Assert.Equal("CK_Order_OrderStatus_Enum", checkConstraint.Name);
             Assert.Equal("[OrderStatus] IN (N'Active', N'Completed')", checkConstraint.Sql);
         }
 
@@ -45,10 +45,10 @@ namespace EFCore.CheckConstraints.Test
 
             var checkConstraint = model.FindEntityType(typeof(Customer))
                 .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Customer_CustomerType_Enum_Constraint");
+                .FirstOrDefault(constraint => constraint.Name == "CK_Customer_CustomerType_Enum");
 
             Assert.NotNull(checkConstraint);
-            Assert.Equal("CK_Customer_CustomerType_Enum_Constraint", checkConstraint.Name);
+            Assert.Equal("CK_Customer_CustomerType_Enum", checkConstraint.Name);
             Assert.Equal("[CustomerType] IN (0, 1)", checkConstraint.Sql);
         }
 
@@ -64,11 +64,11 @@ namespace EFCore.CheckConstraints.Test
 
             var checkConstraintString = model.FindEntityType(typeof(Seller))
                 .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Seller_SellerStatusString_Enum_Constraint");
+                .FirstOrDefault(constraint => constraint.Name == "CK_Seller_SellerStatusString_Enum");
 
             var checkConstraintInt = model.FindEntityType(typeof(Seller))
                 .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Seller_checkConstraintInt_Enum_Constraint");
+                .FirstOrDefault(constraint => constraint.Name == "CK_Seller_checkConstraintInt_Enum");
 
             Assert.Null(checkConstraintString);
             Assert.Null(checkConstraintInt);
@@ -85,7 +85,7 @@ namespace EFCore.CheckConstraints.Test
             var checkConstraint = model.FindEntityType(typeof(File))
                 .GetCheckConstraints()
                 .FirstOrDefault(constraint =>
-                    constraint.Name == "CK_File_FileStatus_Enum_Constraint");
+                    constraint.Name == "CK_File_FileStatus_Enum");
 
             Assert.Null(checkConstraint);
         }
