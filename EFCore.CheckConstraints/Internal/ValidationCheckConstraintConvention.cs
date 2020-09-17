@@ -53,7 +53,7 @@ namespace EFCore.CheckConstraints.Internal
 
             foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
             {
-                var tableName = entityType.GetTableName();
+                var (tableName, schema) = (entityType.GetTableName(), entityType.GetSchema());
                 if (tableName is null)
                 {
                     continue;
@@ -67,7 +67,7 @@ namespace EFCore.CheckConstraints.Internal
                         continue;
                     }
 
-                    var columnName = property.GetColumnName();
+                    var columnName = property.GetColumnName(StoreObjectIdentifier.Table(tableName, schema));
                     if (columnName is null)
                     {
                         continue;
