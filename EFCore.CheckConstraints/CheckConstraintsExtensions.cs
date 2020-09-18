@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using JetBrains.Annotations;
@@ -34,11 +35,29 @@ namespace Microsoft.EntityFrameworkCore
             return optionsBuilder;
         }
 
+        public static DbContextOptionsBuilder UseValidationCheckConstraints(
+            [NotNull] this DbContextOptionsBuilder optionsBuilder,
+            [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
+        {
+            Check.NotNull(optionsBuilder, nameof(optionsBuilder));
+
+            var validationCheckConstraintsOptionsBuilder = new ValidationCheckConstraintOptionsBuilder();
+            validationCheckConstraintsOptionsAction?.Invoke(validationCheckConstraintsOptionsBuilder);
+
+            var extension = (optionsBuilder.Options.FindExtension<CheckConstraintsOptionsExtension>() ?? new CheckConstraintsOptionsExtension())
+                .WithValidationCheckConstraintsOptions(validationCheckConstraintsOptionsBuilder.Options);
+
+            ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
+
+            return optionsBuilder;
+        }
+
         public static DbContextOptionsBuilder UseAllCheckConstraints(
             [NotNull] this DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder
                 .UseEnumCheckConstraints()
-                .UseDiscriminatorCheckConstraints();
+                .UseDiscriminatorCheckConstraints()
+                .UseValidationCheckConstraints();
 
         public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
@@ -47,5 +66,11 @@ namespace Microsoft.EntityFrameworkCore
         public static DbContextOptionsBuilder<TContext> UseDiscriminatorCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseDiscriminatorCheckConstraints((DbContextOptionsBuilder)optionsBuilder);
+
+        public static DbContextOptionsBuilder<TContext> UseValidationCheckConstraints<TContext>(
+            [NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder,
+            [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
+            where TContext : DbContext
+            => (DbContextOptionsBuilder<TContext>)UseValidationCheckConstraints((DbContextOptionsBuilder)optionsBuilder, validationCheckConstraintsOptionsAction);
     }
 }

@@ -10,13 +10,19 @@ namespace EFCore.CheckConstraints.Internal
     {
         private readonly IDbContextOptions _options;
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
+        private readonly IRelationalTypeMappingSource _relationalTypeMappingSource;
+        private readonly IDatabaseProvider _databaseProvider;
 
         public CheckConstraintsConventionSetPlugin(
             [NotNull] IDbContextOptions options,
-            ISqlGenerationHelper sqlGenerationHelper)
+            ISqlGenerationHelper sqlGenerationHelper,
+            IRelationalTypeMappingSource relationalTypeMappingSource,
+            IDatabaseProvider databaseProvider)
         {
             _options = options;
             _sqlGenerationHelper = sqlGenerationHelper;
+            _relationalTypeMappingSource = relationalTypeMappingSource;
+            _databaseProvider = databaseProvider;
         }
 
         public ConventionSet ModifyConventions(ConventionSet conventionSet)
@@ -25,12 +31,21 @@ namespace EFCore.CheckConstraints.Internal
 
             if (extension.AreEnumCheckConstraintsEnabled)
             {
-                conventionSet.ModelFinalizingConventions.Add(new EnumCheckConstraintConvention(_sqlGenerationHelper));
+                conventionSet.ModelFinalizingConventions.Add(
+                    new EnumCheckConstraintConvention(_sqlGenerationHelper));
             }
 
             if (extension.AreDiscriminatorCheckConstraintsEnabled)
             {
-                conventionSet.ModelFinalizingConventions.Add(new DiscriminatorCheckConstraintConvention(_sqlGenerationHelper));
+                conventionSet.ModelFinalizingConventions.Add(
+                    new DiscriminatorCheckConstraintConvention(_sqlGenerationHelper));
+            }
+
+            if (extension.AreValidationCheckConstraintsEnabled)
+            {
+                conventionSet.ModelFinalizingConventions.Add(
+                    new ValidationCheckConstraintConvention(
+                        extension.ValidationCheckConstraintOptions, _sqlGenerationHelper, _relationalTypeMappingSource, _databaseProvider));
             }
 
             return conventionSet;

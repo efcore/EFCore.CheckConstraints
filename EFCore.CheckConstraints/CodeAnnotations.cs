@@ -105,4 +105,10 @@ namespace JetBrains.Annotations
         Members = 2,
         WithMembers = Itself | Members
     }
+
+    /// <summary>
+    /// Indicates that the marked parameter is a regular expression pattern.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Field | AttributeTargets.Property)]
+    internal sealed class RegexPatternAttribute : Attribute { }
 }
