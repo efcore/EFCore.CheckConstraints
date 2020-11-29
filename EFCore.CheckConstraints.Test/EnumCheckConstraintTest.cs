@@ -2,8 +2,9 @@ using System;
 using System.Linq;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
-using Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,109 +19,109 @@ namespace EFCore.CheckConstraints.Test
     public class EnumCheckConstraintConventionTest
     {
         [Fact]
-        public void Generate_check_constraint_with_all_enum_names()
+        public void Simple()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Order>()
-                .Property(o => o.OrderStatus).HasConversion<string>();
+            var entityType = BuildEntityType(e => e.Property<CustomerType>("Type"));
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = model.FindEntityType(typeof(Order))
-                .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Order_OrderStatus_Enum");
-
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
             Assert.NotNull(checkConstraint);
-            Assert.Equal("CK_Order_OrderStatus_Enum", checkConstraint.Name);
-            Assert.Equal("[OrderStatus] IN (N'Active', N'Completed')", checkConstraint.Sql);
+            Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+            Assert.Equal("[Type] IN (0, 1)", checkConstraint.Sql);
         }
 
         [Fact]
-        public void Generate_check_constraint_with_all_enum_values()
+        public void Value_converter()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Customer>();
+            var entityType = BuildEntityType(e => e.Property<CustomerType>("Type").HasConversion<string>());
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = model.FindEntityType(typeof(Customer))
-                .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Customer_CustomerType_Enum");
-
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
             Assert.NotNull(checkConstraint);
-            Assert.Equal("CK_Customer_CustomerType_Enum", checkConstraint.Name);
-            Assert.Equal("[CustomerType] IN (0, 1)", checkConstraint.Sql);
+            Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+            Assert.Equal("[Type] IN (N'Standard', N'Premium')", checkConstraint.Sql);
         }
 
         [Fact]
-        public void Should_not_generate_check_constraint_for_empty_enum()
+        public void Constraint_not_created_for_empty_enum()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Seller>()
-                .Property(p => p.SellerStatusString)
-                .HasConversion<string>();
+            var entityType = BuildEntityType(e => e.Property<EmptyEnum>("Type"));
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraintString = model.FindEntityType(typeof(Seller))
-                .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Seller_SellerStatusString_Enum");
-
-            var checkConstraintInt = model.FindEntityType(typeof(Seller))
-                .GetCheckConstraints()
-                .FirstOrDefault(constraint => constraint.Name == "CK_Seller_checkConstraintInt_Enum");
-
-            Assert.Null(checkConstraintString);
-            Assert.Null(checkConstraintInt);
+            Assert.Empty(entityType.GetCheckConstraints());
         }
 
         [Fact]
-        public void Should_not_generate_check_constraint_for_enum_with_flag()
+        public void Constraint_not_created_for_flags_enum()
         {
-            var builder = CreateBuilder();
-            builder.Entity<File>();
+            var entityType = BuildEntityType(e => e.Property<FlagsEnum>("Type"));
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = model.FindEntityType(typeof(File))
-                .GetCheckConstraints()
-                .FirstOrDefault(constraint =>
-                    constraint.Name == "CK_File_FileStatus_Enum");
-
-            Assert.Null(checkConstraint);
+            Assert.Empty(entityType.GetCheckConstraints());
         }
 
-        private class Seller
+        [Fact]
+        public void Constraint_not_created_for_View()
         {
-            public int Id { get; set; }
-            public string SellerName { get; set; }
-            public SellerStatus SellerStatusString { get; set; }
-            public SellerStatus SellerStatusInt { get; set; }
+            var entityType = BuildEntityType(e =>
+            {
+                e.ToView("CustomerView");
+                e.Property<CustomerType>("Type");
+            });
+
+            Assert.Empty(entityType.GetCheckConstraints());
         }
 
-        private enum SellerStatus
+        [Fact]
+        public void TPH()
         {
+            var model = BuildModel(b =>
+            {
+                b.Entity("Customer", e =>
+                {
+                    e.Property<int>("Id");
+                    e.Property<CustomerType>("Type");
+                });
+                b.Entity("SpecialCustomer", e =>
+                {
+                    e.HasBaseType("Customer");
+                    e.Property<CustomerType>("AnotherType");
+                });
+            });
+
+            var customerCheckConstraint = Assert.Single(model.FindEntityType("Customer").GetCheckConstraints());
+            Assert.NotNull(customerCheckConstraint);
+            Assert.Equal("CK_Customer_Type_Enum", customerCheckConstraint.Name);
+
+            var specialCustomerCheckConstraint = Assert.Single(model.FindEntityType("SpecialCustomer").GetCheckConstraints());
+            Assert.NotNull(specialCustomerCheckConstraint);
+            Assert.Equal("CK_Customer_AnotherType_Enum", specialCustomerCheckConstraint.Name);
         }
 
-        private class Order
+        [Fact]
+        public void TPT()
         {
-            public int Id { get; set; }
-            public int CustomerId { get; set; }
-            public OrderStatus OrderStatus { get; set; }
+            var model = BuildModel(b =>
+            {
+                b.Entity("Customer", e =>
+                {
+                    e.Property<int>("Id");
+                    e.Property<CustomerType>("Type");
+                });
+                b.Entity("SpecialCustomer", e =>
+                {
+                    e.HasBaseType("Customer");
+                    e.ToTable("SpecialCustomer");
+                    e.Property<CustomerType>("AnotherType");
+                });
+            });
+
+            var customerCheckConstraint = Assert.Single(model.FindEntityType("Customer").GetCheckConstraints());
+            Assert.NotNull(customerCheckConstraint);
+            Assert.Equal("CK_Customer_Type_Enum", customerCheckConstraint.Name);
+
+            var specialCustomerCheckConstraint = Assert.Single(model.FindEntityType("SpecialCustomer").GetCheckConstraints());
+            Assert.NotNull(specialCustomerCheckConstraint);
+            Assert.Equal("CK_SpecialCustomer_AnotherType_Enum", specialCustomerCheckConstraint.Name);
         }
 
-        private enum OrderStatus
-        {
-            Active,
-            Completed
-        }
-
-        private class Customer
-        {
-            public int Id { get; set; }
-            public int CustomerName { get; set; }
-            public CustomerType CustomerType { get; set; }
-        }
+        #region Support
 
         private enum CustomerType
         {
@@ -128,31 +129,32 @@ namespace EFCore.CheckConstraints.Test
             Premium = 1
         }
 
-        private class File
-        {
-            public int Id { get; set; }
-            public string Path { get; set; }
-            public FileStatus FileStatus { get; set; }
-        }
+        private enum EmptyEnum {}
 
         [Flags]
-        private enum FileStatus
+        private enum FlagsEnum
         {
-            Opened = 0x0,
-            Closed = 0x1,
-            ReadOnly = 0x2,
-            WriteOnly = 0x4
+            Standard = 0,
+            Premium = 1
         }
 
-        private ModelBuilder CreateBuilder()
+        private IModel BuildModel(Action<ModelBuilder> buildAction)
         {
             var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
-            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
+            var conventionSet = SqlServerTestHelpers.Instance.CreateConventionSetBuilder().CreateConventionSet();
+            ConventionSet.Remove(conventionSet.ModelFinalizedConventions, typeof(ValidatingConvention));
             conventionSet.ModelFinalizingConventions.Add(
                 new EnumCheckConstraintConvention(serviceProvider.GetRequiredService<ISqlGenerationHelper>()));
 
-            return new ModelBuilder(conventionSet);
+            var builder = new ModelBuilder(conventionSet);
+            buildAction(builder);
+            return builder.FinalizeModel();
         }
+
+        private IEntityType BuildEntityType(Action<EntityTypeBuilder> buildAction)
+            => BuildModel(b => buildAction(b.Entity("Customer"))).GetEntityTypes().Single();
+
+        #endregion
     }
 }
