@@ -6,7 +6,7 @@ Many databases support something called "check constraints", which allow you to 
 
 Entity Framework Core allows you to specify check constraints in SQL - this helps tighten your data model and ensure that no inconsistent or invalid ever makes it into your precious tables. However, EF does not implicitly generate check constraints for you, even though in some cases it could; this is because check constraints do have a performance cost, and they're not for everyone. This plugin allows you to opt into some constraints - just activate it and they'll automatically get created for you.
 
-The first step is to install the [EFCore.CheckConstraints nuget package](nuget.org/packages/EFCore.CheckConstraints). Then, choose the constraints you want from the below.
+The first step is to install the [EFCore.CheckConstraints nuget package](https://www.nuget.org/packages/EFCore.CheckConstraints). Then, choose the constraints you want from the below.
 
 ## Enum constraints
 
