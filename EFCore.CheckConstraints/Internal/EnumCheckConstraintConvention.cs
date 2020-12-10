@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace EFCore.CheckConstraints.Internal
@@ -31,14 +32,16 @@ namespace EFCore.CheckConstraints.Internal
                     continue;
                 }
 
+                var tableIdentifier = StoreObjectIdentifier.Table(tableName, entityType.GetSchema());
+
                 foreach (var property in entityType.GetDeclaredProperties())
                 {
                     var typeMapping = property.FindTypeMapping();
-                    var propertyType = (property.PropertyInfo ?? (MemberInfo)property.FieldInfo)?.GetMemberType();
-                    if ((propertyType?.IsEnum ?? false)
+                    var propertyType = property.ClrType;
+                    if (propertyType.IsEnum
                         && typeMapping != null
                         && !propertyType.IsDefined(typeof(FlagsAttribute), true)
-                        && property.GetColumnName() is string columnName)
+                        && property.GetColumnName(tableIdentifier) is string columnName)
                     {
                         var enumValues = Enum.GetValues(propertyType);
                         if (enumValues.Length <= 0)
@@ -48,7 +51,7 @@ namespace EFCore.CheckConstraints.Internal
 
                         sql.Clear();
 
-                        sql.Append(_sqlGenerationHelper.DelimitIdentifier(property.GetColumnName()));
+                        sql.Append(_sqlGenerationHelper.DelimitIdentifier(property.GetColumnName(tableIdentifier)));
                         sql.Append(" IN (");
                         foreach (var item in enumValues)
                         {

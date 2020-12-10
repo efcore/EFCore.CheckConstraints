@@ -15,9 +15,9 @@ namespace EFCore.CheckConstraints.Internal
 
         public CheckConstraintsConventionSetPlugin(
             [NotNull] IDbContextOptions options,
-            ISqlGenerationHelper sqlGenerationHelper,
-            IRelationalTypeMappingSource relationalTypeMappingSource,
-            IDatabaseProvider databaseProvider)
+            [NotNull] ISqlGenerationHelper sqlGenerationHelper,
+            [NotNull] IRelationalTypeMappingSource relationalTypeMappingSource,
+            [NotNull] IDatabaseProvider databaseProvider)
         {
             _options = options;
             _sqlGenerationHelper = sqlGenerationHelper;

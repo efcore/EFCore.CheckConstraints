@@ -1,7 +1,11 @@
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,14 +18,9 @@ namespace EFCore.CheckConstraints.Test
         [Fact]
         public virtual void Range()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Blog>();
+            var entityType = BuildEntityType<Blog>();
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = Assert.Single(
-                model.FindEntityType(typeof(Blog)).GetCheckConstraints(),
-                c => c.Name == "CK_Blog_Rating_Range");
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Rating_Range");
             Assert.NotNull(checkConstraint);
             Assert.Equal("[Rating] >= 1 AND [Rating] <= 5", checkConstraint.Sql);
         }
@@ -29,14 +28,9 @@ namespace EFCore.CheckConstraints.Test
         [Fact]
         public void MinLength()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Blog>();
+            var entityType = BuildEntityType<Blog>();
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = Assert.Single(
-                model.FindEntityType(typeof(Blog)).GetCheckConstraints(),
-                c => c.Name == "CK_Blog_Name_MinLength");
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Name_MinLength");
             Assert.NotNull(checkConstraint);
             Assert.Equal("LEN([Name]) >= 4", checkConstraint.Sql);
         }
@@ -44,14 +38,9 @@ namespace EFCore.CheckConstraints.Test
         [Fact]
         public virtual void Phone()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Blog>();
+            var entityType = BuildEntityType<Blog>();
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = Assert.Single(
-                model.FindEntityType(typeof(Blog)).GetCheckConstraints(),
-                c => c.Name == "CK_Blog_PhoneNumber_Phone");
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_PhoneNumber_Phone");
             Assert.NotNull(checkConstraint);
             Assert.Equal(
                 $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultPhoneRegex}', [PhoneNumber])",
@@ -61,14 +50,9 @@ namespace EFCore.CheckConstraints.Test
         [Fact]
         public virtual void CreditCard()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Blog>();
+            var entityType = BuildEntityType<Blog>();
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = Assert.Single(
-                model.FindEntityType(typeof(Blog)).GetCheckConstraints(),
-                c => c.Name == "CK_Blog_CreditCard_CreditCard");
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_CreditCard_CreditCard");
             Assert.NotNull(checkConstraint);
             Assert.Equal(
                 $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultCreditCardRegex}', [CreditCard])",
@@ -78,14 +62,9 @@ namespace EFCore.CheckConstraints.Test
         [Fact]
         public virtual void EmailAddress()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Blog>();
+            var entityType = BuildEntityType<Blog>();
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = Assert.Single(
-                model.FindEntityType(typeof(Blog)).GetCheckConstraints(),
-                c => c.Name == "CK_Blog_Email_EmailAddress");
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Email_EmailAddress");
             Assert.NotNull(checkConstraint);
             Assert.Equal(
                 $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultEmailAddressRegex}', [Email])",
@@ -95,14 +74,9 @@ namespace EFCore.CheckConstraints.Test
         [Fact]
         public virtual void Url()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Blog>();
+            var entityType = BuildEntityType<Blog>();
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = Assert.Single(
-                model.FindEntityType(typeof(Blog)).GetCheckConstraints(),
-                c => c.Name == "CK_Blog_Address_Url");
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Address_Url");
             Assert.NotNull(checkConstraint);
             Assert.Equal(
                 $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultUrlAddressRegex}', [Address])",
@@ -112,18 +86,16 @@ namespace EFCore.CheckConstraints.Test
         [Fact]
         public virtual void RegularExpression()
         {
-            var builder = CreateBuilder();
-            builder.Entity<Blog>();
+            var entityType = BuildEntityType<Blog>();
 
-            var model = builder.FinalizeModel();
-
-            var checkConstraint = Assert.Single(
-                model.FindEntityType(typeof(Blog)).GetCheckConstraints(),
-                c => c.Name == "CK_Blog_StartsWithA_RegularExpression");
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_StartsWithA_RegularExpression");
             Assert.NotNull(checkConstraint);
             Assert.Equal("dbo.RegexMatch('^A', [StartsWithA])", checkConstraint.Sql);
         }
 
+        #region Support
+
+        // ReSharper disable UnusedMember.Local
         class Blog
         {
             public int Id { get; set; }
@@ -142,12 +114,14 @@ namespace EFCore.CheckConstraints.Test
             [RegularExpression("^A")]
             public string StartsWithA { get; set; }
         }
+        // ReSharper restore UnusedMember.Local
 
-        private ModelBuilder CreateBuilder()
+        private IModel BuildModel(Action<ModelBuilder> buildAction)
         {
             var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
-            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
+            var conventionSet = SqlServerTestHelpers.Instance.CreateConventionSetBuilder().CreateConventionSet();
+            ConventionSet.Remove(conventionSet.ModelFinalizedConventions, typeof(ValidatingConvention));
             conventionSet.ModelFinalizingConventions.Add(
                 new ValidationCheckConstraintConvention(
                     new ValidationCheckConstraintOptions(),
@@ -155,7 +129,19 @@ namespace EFCore.CheckConstraints.Test
                     serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
                     serviceProvider.GetRequiredService<IDatabaseProvider>()));
 
-            return new ModelBuilder(conventionSet);
+            var builder = new ModelBuilder(conventionSet);
+            buildAction(builder);
+            return builder.FinalizeModel();
         }
+
+        private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>> buildAction = null)
+            where TEntity : class
+        {
+            return BuildModel(buildAction is null
+                ? b => b.Entity<TEntity>()
+                : b => buildAction(b.Entity<TEntity>())).GetEntityTypes().Single();
+        }
+
+        #endregion
     }
 }

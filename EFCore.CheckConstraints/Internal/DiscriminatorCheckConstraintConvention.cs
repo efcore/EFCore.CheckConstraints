@@ -2,6 +2,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -29,18 +30,22 @@ namespace EFCore.CheckConstraints.Internal
                 .Where(g => g.Key.GetDiscriminatorProperty() != null && g.Key.GetIsDiscriminatorMappingComplete())
                 .Select(g => (g.Key, g.Select(e => e.GetDiscriminatorValue()))))
             {
+                if (!(StoreObjectIdentifier.Create(rootEntityType, StoreObjectType.Table) is StoreObjectIdentifier tableIdentifier))
+                {
+                    continue;
+                }
+
                 var discriminatorProperty = rootEntityType.GetDiscriminatorProperty();
-                var typeMapping = (RelationalTypeMapping)discriminatorProperty.FindTypeMapping();
-                var discriminatorColumnName = discriminatorProperty.GetColumnName();
-                var tableName = rootEntityType.GetTableName();
-                if (typeMapping is null || discriminatorColumnName is null || tableName is null)
+
+                if (!(discriminatorProperty.FindTypeMapping() is RelationalTypeMapping typeMapping)
+                    || !(discriminatorProperty.GetColumnName(tableIdentifier) is string))
                 {
                     continue;
                 }
 
                 sql.Clear();
 
-                sql.Append(_sqlGenerationHelper.DelimitIdentifier(discriminatorProperty.GetColumnName()));
+                sql.Append(_sqlGenerationHelper.DelimitIdentifier(discriminatorProperty.GetColumnName(tableIdentifier)));
                 sql.Append(" IN (");
                 foreach (var discriminatorValue in discriminatorValues.Where(v => v != null))
                 {
@@ -51,7 +56,7 @@ namespace EFCore.CheckConstraints.Internal
                 sql.Remove(sql.Length - 2, 2);
                 sql.Append(")");
 
-                var constraintName = $"CK_{tableName}_Discriminator";
+                var constraintName = $"CK_{tableIdentifier.Name}_Discriminator";
                 rootEntityType.AddCheckConstraint(constraintName, sql.ToString());
             }
         }
