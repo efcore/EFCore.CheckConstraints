@@ -133,7 +133,7 @@ namespace EFCore.CheckConstraints.Internal
                 debugInfo["CheckConstraints:Discriminators"]
                     = Extension._discriminatorCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
                 debugInfo["CheckConstraints:Validation"]
-                    = Extension._validationCheckConstraintsOptions.GetHashCode().ToString(CultureInfo.InvariantCulture);
+                    = Extension._validationCheckConstraintsOptions?.GetHashCode().ToString(CultureInfo.InvariantCulture);
             }
         }
     }
