@@ -1,7 +1,11 @@
 ﻿<Project>
 
   <PropertyGroup>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <LangVersion>9.0</LangVersion>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
 </Project>
