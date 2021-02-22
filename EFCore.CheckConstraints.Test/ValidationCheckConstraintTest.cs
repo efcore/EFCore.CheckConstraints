@@ -36,6 +36,14 @@ namespace EFCore.CheckConstraints.Test
         }
 
         [Fact]
+        public void NoRegex()
+        {
+            var entityType = BuildEntityType<Blog>(useRegex: false);
+
+            Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name.StartsWith("dbo.RegexMatch("));
+        }
+
+        [Fact]
         public virtual void Phone()
         {
             var entityType = BuildEntityType<Blog>();
@@ -116,7 +124,7 @@ namespace EFCore.CheckConstraints.Test
         }
         // ReSharper restore UnusedMember.Local
 
-        private IModel BuildModel(Action<ModelBuilder> buildAction)
+        private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex)
         {
             var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
 
@@ -124,7 +132,7 @@ namespace EFCore.CheckConstraints.Test
             ConventionSet.Remove(conventionSet.ModelFinalizedConventions, typeof(ValidatingConvention));
             conventionSet.ModelFinalizingConventions.Add(
                 new ValidationCheckConstraintConvention(
-                    new ValidationCheckConstraintOptions(),
+                    new ValidationCheckConstraintOptions() { UseRegex = useRegex },
                     serviceProvider.GetRequiredService<ISqlGenerationHelper>(),
                     serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
                     serviceProvider.GetRequiredService<IDatabaseProvider>()));
@@ -134,12 +142,13 @@ namespace EFCore.CheckConstraints.Test
             return builder.FinalizeModel();
         }
 
-        private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>> buildAction = null)
+        private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>> buildAction = null, bool useRegex = true)
             where TEntity : class
         {
             return BuildModel(buildAction is null
                 ? b => b.Entity<TEntity>()
-                : b => buildAction(b.Entity<TEntity>())).GetEntityTypes().Single();
+                : b => buildAction(b.Entity<TEntity>()),
+                useRegex).GetEntityTypes().Single();
         }
 
         #endregion
