@@ -1,14 +1,14 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage;
 using System.Reflection;
+using System.Text;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal
 {
@@ -75,6 +75,7 @@ namespace EFCore.CheckConstraints.Internal
 
                     ProcessRange(property, memberInfo, tableName, columnName, sql);
                     ProcessMinLength(property, memberInfo, tableName, columnName, sql);
+                    ProcessStringLengthMinimumLength(property, memberInfo, tableName, columnName, sql);
 
                     if (_supportsRegex)
                     {
@@ -125,12 +126,33 @@ namespace EFCore.CheckConstraints.Internal
             string columnName,
             StringBuilder sql)
         {
-            if (_intTypeMapping is null ||
-                !(memberInfo.GetCustomAttribute<MinLengthAttribute>()?.Length is int minLength))
+            if (_intTypeMapping is not null && memberInfo.GetCustomAttribute<MinLengthAttribute>()?.Length is int minLength)
             {
-                return;
+                ProcessMinimumLengthInternal(property, memberInfo, tableName, columnName, sql, minLength);
             }
+        }
 
+        protected virtual void ProcessStringLengthMinimumLength(
+            IConventionProperty property,
+            MemberInfo memberInfo,
+            string tableName,
+            string columnName,
+            StringBuilder sql)
+        {
+            if (_intTypeMapping is not null && memberInfo.GetCustomAttribute<StringLengthAttribute>()?.MinimumLength is int minLength)
+            {
+                ProcessMinimumLengthInternal(property, memberInfo, tableName, columnName, sql, minLength);
+            }
+        }
+
+        protected virtual void ProcessMinimumLengthInternal(
+            IConventionProperty property,
+            MemberInfo memberInfo,
+            string tableName,
+            string columnName,
+            StringBuilder sql,
+            int minLength)
+        {
             var lengthFunctionName = _databaseProvider.Name switch
             {
                 "Microsoft.EntityFrameworkCore.SqlServer" => "LEN",
