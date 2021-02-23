@@ -1,11 +1,10 @@
 using System;
 using System.Text;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal
 {
@@ -16,6 +15,12 @@ namespace EFCore.CheckConstraints.Internal
     {
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
+        /// <summary>
+        ///     Creates a new <see cref="EnumCheckConstraintConvention"/> object.
+        /// </summary>
+        /// <param name="sqlGenerationHelper">
+        ///     Service to help with generation of SQL commands.
+        /// </param>
         public EnumCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
             => _sqlGenerationHelper = sqlGenerationHelper;
 
