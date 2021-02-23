@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Text;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -16,6 +16,12 @@ namespace EFCore.CheckConstraints.Internal
     {
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
+        /// <summary>
+        ///     Creates a new <see cref="DiscriminatorCheckConstraintConvention"/> object.
+        /// </summary>
+        /// <param name="sqlGenerationHelper">
+        ///     Service to help with generation of SQL commands.
+        /// </param>
         public DiscriminatorCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
             => _sqlGenerationHelper = sqlGenerationHelper;
 

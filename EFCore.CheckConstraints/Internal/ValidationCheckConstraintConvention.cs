@@ -17,10 +17,27 @@ namespace EFCore.CheckConstraints.Internal
     /// </summary>
     public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
+        /// <summary>
+        ///     Default regular expression pattern string used for phone numbers.
+        /// </summary>
         public const string DefaultPhoneRegex = @"^[\d\s+-.()]*\d[\d\s+-.()]*((ext\.|ext|x)\s*\d+)?\s*$";
+
+        /// <summary>
+        ///     Default regular expression pattern string used for credit card numbers.
+        /// </summary>
         public const string DefaultCreditCardRegex = @"^[\d- ]*$";
+
+        /// <summary>
+        ///     Default regular expression pattern string used for e-mail addresses.
+        /// </summary>
         public const string DefaultEmailAddressRegex = @"^[^@]+@[^@]+$";
+
+        /// <summary>
+        ///     Default regular expression pattern string used for URLs.
+        /// </summary>
         public const string DefaultUrlAddressRegex = @"^(http://|https://|ftp://)";
+
+
 
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
         private readonly IDatabaseProvider _databaseProvider;
@@ -29,6 +46,22 @@ namespace EFCore.CheckConstraints.Internal
         private readonly bool _supportsRegex;
         private readonly string _phoneRegex, _creditCardRegex, _emailAddressRegex, _urlRegex;
 
+
+        /// <summary>
+        ///     Creates a new <see cref="ValidationCheckConstraintConvention"/> object.
+        /// </summary>
+        /// <param name="options">
+        ///     Configures how validation check constraints will be created.
+        /// </param>
+        /// <param name="sqlGenerationHelper">
+        ///     Service to help with generation of SQL commands.
+        /// </param>
+        /// <param name="relationalTypeMappingSource">
+        ///     Relational type mapping interface for EF Core.
+        /// </param>
+        /// <param name="databaseProvider">
+        ///     The current database provider.
+        /// </param>
         public ValidationCheckConstraintConvention(
             ValidationCheckConstraintOptions options,
             ISqlGenerationHelper sqlGenerationHelper,
@@ -39,7 +72,7 @@ namespace EFCore.CheckConstraints.Internal
             _databaseProvider = databaseProvider;
             _intTypeMapping = relationalTypeMappingSource.FindMapping(typeof(int));
 
-            _supportsRegex = SupportsRegex;
+            _supportsRegex = options.UseRegex && SupportsRegex;
             _phoneRegex = options.PhoneRegex ?? DefaultPhoneRegex;
             _creditCardRegex = options.CreditCardRegex ?? DefaultCreditCardRegex;
             _emailAddressRegex = options.EmailAddressRegex ?? DefaultEmailAddressRegex;
@@ -89,6 +122,27 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+
+
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="RangeAttribute"/> data annotation.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessRange(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -119,6 +173,25 @@ namespace EFCore.CheckConstraints.Internal
             property.DeclaringEntityType.AddCheckConstraint(constraintName, sql.ToString());
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="MinLengthAttribute"/> data annotation.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessMinLength(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -132,6 +205,26 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="StringLengthAttribute.MinimumLength"/> data
+        ///     annotation attribute property.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessStringLengthMinimumLength(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -145,6 +238,29 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for the provided
+        ///     minimum length definition.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
+        /// <param name="minLength">
+        ///     Database table column's minimum length to be validated
+        ///     by table column check constraint.
+        /// </param>
         protected virtual void ProcessMinimumLengthInternal(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -181,6 +297,25 @@ namespace EFCore.CheckConstraints.Internal
             property.DeclaringEntityType.AddCheckConstraint(constraintName, sql.ToString());
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="PhoneAttribute"/> data annotation.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessPhoneNumber(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -196,6 +331,25 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="CreditCardAttribute"/> data annotation.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessCreditCard(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -211,6 +365,25 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="EmailAddressAttribute"/> data annotation.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessEmailAddress(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -226,6 +399,25 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="UrlAttribute"/> data annotation.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessUrl(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -241,6 +433,25 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="RegularExpressionAttribute"/> data annotation.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessRegularExpression(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -256,6 +467,23 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+
+
+        /// <summary>
+        ///     Creates provider specific SQL constraint clause
+        ///     for evaluating the provided regular expression
+        ///     pattern string.
+        /// </summary>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="regex">
+        ///     Regular expression pattern string.
+        /// </param>
+        /// <returns>
+        ///     Provider specific SQL constraint clause
+        ///     for evaluating the provided regular expression.
+        /// </returns>
         protected virtual string GenerateRegexSql(string columnName, [RegexPattern] string regex)
             => string.Format(
                 _databaseProvider.Name switch
@@ -269,6 +497,11 @@ namespace EFCore.CheckConstraints.Internal
                     _ => throw new InvalidOperationException($"Provider {_databaseProvider.Name} doesn't support regular expressions")
                 }, _sqlGenerationHelper.DelimitIdentifier(columnName), regex);
 
+        /// <summary>
+        ///     <c>true</c> if the current database provider
+        ///     supports regular expression check constraints;
+        ///     <c>false</c> otherwise.
+        /// </summary>
         protected virtual bool SupportsRegex
             => _databaseProvider.Name switch
             {

@@ -1,8 +1,8 @@
+using EFCore.CheckConstraints.Internal;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
-using EFCore.CheckConstraints.Internal;
-using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
