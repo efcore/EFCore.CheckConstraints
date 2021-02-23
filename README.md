@@ -66,6 +66,19 @@ CREATE TABLE "Blogs" (
 
 Most of the attributes make use of database regular expressions. For SQL Server, this requires some initial setup - [follow these docs](https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench). Note that processing complex regular expressions does have a cost, so consider performance before turning these constraints on for write-intensive applications.
 
+To disable generating regular expression constraints from the corresponding data annotation attributes, set `UseRegex` validation check constraint option to `false`:
+
+```c#
+
+public class MyContext : DbContext
+{
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder
+            .UseSqlServer(...)
+            .UseValidationCheckConstraints(options => options.UseRegex(false));
+}
+```
+
 ## Enum constraints
 
 When you map a .NET enum to the database, by default that's done by storing the enum's underlying int in a plain old database int column (another common strategy is to map the string representation instead). Although the .NET enum has a constrained set of values which you've defined, on the database side there's nothing stopping anyone from inserting any value, including ones that are out of range.
