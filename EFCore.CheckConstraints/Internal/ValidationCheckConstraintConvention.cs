@@ -39,7 +39,7 @@ namespace EFCore.CheckConstraints.Internal
             _databaseProvider = databaseProvider;
             _intTypeMapping = relationalTypeMappingSource.FindMapping(typeof(int));
 
-            _supportsRegex = SupportsRegex;
+            _supportsRegex = options.UseRegex && SupportsRegex;
             _phoneRegex = options.PhoneRegex ?? DefaultPhoneRegex;
             _creditCardRegex = options.CreditCardRegex ?? DefaultCreditCardRegex;
             _emailAddressRegex = options.EmailAddressRegex ?? DefaultEmailAddressRegex;

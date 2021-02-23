@@ -1,8 +1,7 @@
 using System;
-using System.Globalization;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using JetBrains.Annotations;
 using EFCore.CheckConstraints.Internal;
+using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.EntityFrameworkCore
@@ -53,11 +52,12 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         public static DbContextOptionsBuilder UseAllCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder)
+            [NotNull] this DbContextOptionsBuilder optionsBuilder,
+            [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
             => optionsBuilder
                 .UseEnumCheckConstraints()
                 .UseDiscriminatorCheckConstraints()
-                .UseValidationCheckConstraints();
+                .UseValidationCheckConstraints(validationCheckConstraintsOptionsAction);
 
         public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
