@@ -20,6 +20,8 @@ public class Blog
     public int Rating { get; set; }
     [MinLength(4)]
     public string Name { get; set; }
+    [StringLength(100, MinimumLength = 1)]
+    public string Required { get; set; }
     [Phone]
     public string PhoneNumber { get; set; }
     [CreditCard]
@@ -58,6 +60,7 @@ CREATE TABLE "Blogs" (
     CONSTRAINT "CK_Blogs_CreditCard_CreditCard" CHECK ("CreditCard" ~ '^[\d- ]*$'),
     CONSTRAINT "CK_Blogs_Email_EmailAddress" CHECK ("Email" ~ '^[^@]+@[^@]+$'),
     CONSTRAINT "CK_Blogs_Name_MinLength" CHECK (LENGTH("Name") >= 4),
+    CONSTRAINT "CK_Blogs_Required_MinLength" CHECK (LENGTH("Required") >= 1),
     CONSTRAINT "CK_Blogs_PhoneNumber_Phone" CHECK ("PhoneNumber" ~ '^[\d\s+-.()]*\d[\d\s+-.()]*((ext\.|ext|x)\s*\d+)?\s*$'),
     CONSTRAINT "CK_Blogs_Rating_Range" CHECK ("Rating" >= 1 AND "Rating" <= 5),
     CONSTRAINT "CK_Blogs_StartsWithA_RegularExpression" CHECK ("StartsWithA" ~ '^A')
