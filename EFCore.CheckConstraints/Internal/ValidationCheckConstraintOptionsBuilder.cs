@@ -5,10 +5,17 @@ using JetBrains.Annotations;
 
 namespace EFCore.CheckConstraints.Internal
 {
+    /// <summary>
+    ///     Sets configuration options for <see cref="Microsoft.EntityFrameworkCore.CheckConstraintsExtensions"/> methods.
+    /// </summary>
     public class ValidationCheckConstraintOptionsBuilder
     {
         private readonly ValidationCheckConstraintOptions _options = new ValidationCheckConstraintOptions();
 
+
+        /// <summary>
+        ///     Current validation check constraint configuration.
+        /// </summary>
         public virtual ValidationCheckConstraintOptions Options => _options;
 
 
@@ -17,8 +24,8 @@ namespace EFCore.CheckConstraints.Internal
         ///     Enable or disable creation of regular expression constraints.
         /// </summary>
         /// <param name="useRegex">
-        ///     <c>true</c> if regular expression constraints should be created; else <c>false</c>.
-        ///     <c>true</c> is the default.
+        ///     <c>true</c> if regular expression constraints should be created; <c>false</c> otherwise.
+        ///     <c>true</c> is the default value.
         /// </param>
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
