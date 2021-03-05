@@ -36,6 +36,16 @@ namespace EFCore.CheckConstraints.Test
         }
 
         [Fact]
+        public void StringLengthMinimumLength()
+        {
+            var entityType = BuildEntityType<Blog>();
+
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Required_MinLength");
+            Assert.NotNull(checkConstraint);
+            Assert.Equal("LEN([Required]) >= 1", checkConstraint.Sql);
+        }
+
+        [Fact]
         public virtual void Phone()
         {
             var entityType = BuildEntityType<Blog>();
@@ -103,6 +113,8 @@ namespace EFCore.CheckConstraints.Test
             public int Rating { get; set; }
             [MinLength(4)]
             public string Name { get; set; }
+            [StringLength(100, MinimumLength = 1)]
+            public string Required { get; set; }
             [Phone]
             public string PhoneNumber { get; set; }
             [CreditCard]
