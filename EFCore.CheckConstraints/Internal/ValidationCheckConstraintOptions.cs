@@ -37,7 +37,7 @@ namespace EFCore.CheckConstraints.Internal
         ///     <c>true</c>, if validation check constraints based on regular
         ///     expressions should be used; <c>false</c> otherwise.
         /// </summary>
-        public bool UseRegex { get; set; }
+        public bool UseRegex { get; set; } = true;
 
         /// <summary>
         ///     Regular expression pattern string to be used for validating phone numbers.

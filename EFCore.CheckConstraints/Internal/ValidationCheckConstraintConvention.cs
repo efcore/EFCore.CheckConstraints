@@ -43,7 +43,7 @@ namespace EFCore.CheckConstraints.Internal
         private readonly IDatabaseProvider _databaseProvider;
         private readonly RelationalTypeMapping _intTypeMapping;
 
-        private readonly bool _supportsRegex;
+        private readonly bool _useRegex;
         private readonly string _phoneRegex, _creditCardRegex, _emailAddressRegex, _urlRegex;
 
 
@@ -72,7 +72,7 @@ namespace EFCore.CheckConstraints.Internal
             _databaseProvider = databaseProvider;
             _intTypeMapping = relationalTypeMappingSource.FindMapping(typeof(int));
 
-            _supportsRegex = options.UseRegex && SupportsRegex;
+            _useRegex = options.UseRegex && SupportsRegex;
             _phoneRegex = options.PhoneRegex ?? DefaultPhoneRegex;
             _creditCardRegex = options.CreditCardRegex ?? DefaultCreditCardRegex;
             _emailAddressRegex = options.EmailAddressRegex ?? DefaultEmailAddressRegex;
@@ -110,7 +110,7 @@ namespace EFCore.CheckConstraints.Internal
                     ProcessMinLength(property, memberInfo, tableName, columnName, sql);
                     ProcessStringLengthMinimumLength(property, memberInfo, tableName, columnName, sql);
 
-                    if (_supportsRegex)
+                    if (_useRegex)
                     {
                         ProcessPhoneNumber(property, memberInfo, tableName, columnName, sql);
                         ProcessCreditCard(property, memberInfo, tableName, columnName, sql);
@@ -205,6 +205,26 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for an entity property's
+        ///     <see cref="StringLengthAttribute.MinimumLength"/> data
+        ///     annotation attribute property.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
         protected virtual void ProcessStringLengthMinimumLength(
             IConventionProperty property,
             MemberInfo memberInfo,
@@ -218,6 +238,29 @@ namespace EFCore.CheckConstraints.Internal
             }
         }
 
+        /// <summary>
+        ///     Creates SQL check constraint clause for the provided
+        ///     minimum length definition.
+        /// </summary>
+        /// <param name="property">
+        ///     Property to be examined.
+        /// </param>
+        /// <param name="memberInfo">
+        ///     <see cref="MemberInfo"/> of property to be examined.
+        /// </param>
+        /// <param name="tableName">
+        ///     Database table name.
+        /// </param>
+        /// <param name="columnName">
+        ///     Database table column name.
+        /// </param>
+        /// <param name="sql">
+        ///     <see cref="StringBuilder"/> to add SQL commands to.
+        /// </param>
+        /// <param name="minLength">
+        ///     Database table column's minimum length to be validated
+        ///     by table column check constraint.
+        /// </param>
         protected virtual void ProcessMinimumLengthInternal(
             IConventionProperty property,
             MemberInfo memberInfo,
