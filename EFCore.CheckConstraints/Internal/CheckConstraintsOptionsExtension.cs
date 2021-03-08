@@ -20,8 +20,6 @@ namespace EFCore.CheckConstraints.Internal
         private bool _discriminatorCheckConstraintsEnabled;
         private ValidationCheckConstraintOptions _validationCheckConstraintsOptions;
 
-
-
         /// <summary>
         ///     Creates a new <see cref="CheckConstraintsOptionsExtension"/> object.
         /// </summary>
@@ -43,8 +41,6 @@ namespace EFCore.CheckConstraints.Internal
                 : new ValidationCheckConstraintOptions(copyFrom._validationCheckConstraintsOptions);
         }
 
-
-
         /// <summary>
         ///     Information/metadata about the Entity Framework Core
         ///     database context options extension, used for logging/debugging.
@@ -60,8 +56,6 @@ namespace EFCore.CheckConstraints.Internal
         ///     from the current <see cref="CheckConstraintsOptionsExtension"/> object.
         /// </returns>
         protected virtual CheckConstraintsOptionsExtension Clone() => new CheckConstraintsOptionsExtension(this);
-
-
 
         /// <summary>
         ///     <c>true</c>, if enum check constraints are enabled; <c>false</c> otherwise.
@@ -82,8 +76,6 @@ namespace EFCore.CheckConstraints.Internal
         ///     The currently configured <see cref="ValidationCheckConstraintOptions"/>. May be <c>null</c>.
         /// </summary>
         public virtual ValidationCheckConstraintOptions ValidationCheckConstraintOptions => _validationCheckConstraintsOptions;
-
-
 
         /// <summary>
         ///     Creates a new <see cref="CheckConstraintsOptionsExtension"/> object
@@ -144,8 +136,6 @@ namespace EFCore.CheckConstraints.Internal
             return clone;
         }
 
-
-
         /// <summary>
         ///     Checks if all options are valid.
         /// </summary>
@@ -153,7 +143,6 @@ namespace EFCore.CheckConstraints.Internal
         ///     Collection of Entity Framework Core database context option extensions.
         /// </param>
         public void Validate(IDbContextOptions options) {}
-
 
         /// <summary>
         ///     Adds the table column check constraint service to the list of
@@ -164,8 +153,6 @@ namespace EFCore.CheckConstraints.Internal
         /// </param>
         public void ApplyServices(IServiceCollection services)
             => services.AddEntityFrameworkCheckConstraints();
-
-
 
         /// <summary>
         ///     Information/metadata about the Entity Framework Core

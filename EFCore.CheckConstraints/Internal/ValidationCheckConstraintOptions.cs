@@ -31,8 +31,6 @@ namespace EFCore.CheckConstraints.Internal
             UrlRegex = copyFrom.UrlRegex;
         }
 
-
-
         /// <summary>
         ///     <c>true</c>, if validation check constraints based on regular
         ///     expressions should be used; <c>false</c> otherwise.
@@ -58,8 +56,6 @@ namespace EFCore.CheckConstraints.Internal
         ///     Regular expression pattern string to be used for validating URLs.
         /// </summary>
         public string UrlRegex { get; set; }
-
-
 
         /// <inheritdoc />
         public override bool Equals(object obj)

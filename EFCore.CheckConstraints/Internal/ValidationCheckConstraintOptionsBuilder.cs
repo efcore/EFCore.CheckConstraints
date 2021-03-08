@@ -12,13 +12,10 @@ namespace EFCore.CheckConstraints.Internal
     {
         private readonly ValidationCheckConstraintOptions _options = new ValidationCheckConstraintOptions();
 
-
         /// <summary>
         ///     Current validation check constraint configuration.
         /// </summary>
         public virtual ValidationCheckConstraintOptions Options => _options;
-
-
 
         /// <summary>
         ///     Enable or disable creation of regular expression constraints.

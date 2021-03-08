@@ -37,15 +37,12 @@ namespace EFCore.CheckConstraints.Internal
         /// </summary>
         public const string DefaultUrlAddressRegex = @"^(http://|https://|ftp://)";
 
-
-
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
         private readonly IDatabaseProvider _databaseProvider;
         private readonly RelationalTypeMapping _intTypeMapping;
 
         private readonly bool _useRegex;
         private readonly string _phoneRegex, _creditCardRegex, _emailAddressRegex, _urlRegex;
-
 
         /// <summary>
         ///     Creates a new <see cref="ValidationCheckConstraintConvention"/> object.
@@ -121,8 +118,6 @@ namespace EFCore.CheckConstraints.Internal
                 }
             }
         }
-
-
 
         /// <summary>
         ///     Creates SQL check constraint clause for an entity property's
@@ -466,8 +461,6 @@ namespace EFCore.CheckConstraints.Internal
                     GenerateRegexSql(columnName, pattern));
             }
         }
-
-
 
         /// <summary>
         ///     Creates provider specific SQL constraint clause
