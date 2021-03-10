@@ -8,22 +8,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 namespace Microsoft.EntityFrameworkCore
 {
     /// <summary>
-    ///     Extension methods for adding column check constraints to database tables.
+    ///     Extension methods for adding check constraints to database tables.
     /// </summary>
     public static class CheckConstraintsExtensions
     {
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with enum check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder"/> object.
+        ///     Adds check constraints which enforce that columns mapped to .NET enums only contain values valid for those enums.
         /// </summary>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with enum check constraints enabled.
-        /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder"/> object.
-        /// </returns>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder UseEnumCheckConstraints(
             [NotNull] this DbContextOptionsBuilder optionsBuilder)
         {
@@ -38,17 +31,11 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with discriminator check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder"/> object.
+        ///     Adds check constraints which enforce that discriminator columns in a type-per-hierarchy inheritance mapping only contains
+        ///     valid discriminator values.
         /// </summary>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with discriminator check constraints enabled.
-        /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder"/> object.
-        /// </returns>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder UseDiscriminatorCheckConstraints(
             [NotNull] this DbContextOptionsBuilder optionsBuilder)
         {
@@ -63,20 +50,13 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with validation check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder"/> object.
+        ///     Adds check constraints which enforce various .NET standard validation attributes.
         /// </summary>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with validation check constraints enabled.
-        /// </param>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <param name="validationCheckConstraintsOptionsAction">
-        ///     Configures validation check constraint creation.
+        ///     An optional action to configure the validation check constraints.
         /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder"/> object.
-        /// </returns>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder UseValidationCheckConstraints(
             [NotNull] this DbContextOptionsBuilder optionsBuilder,
             [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
@@ -95,20 +75,13 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with all kinds of check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder"/> object.
+        ///     Adds all check constraints supported by this plugin.
         /// </summary>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with all kinds of check constraints enabled.
-        /// </param>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <param name="validationCheckConstraintsOptionsAction">
-        ///     Configures validation check constraint creation.
+        ///     An optional action to configure the validation check constraints.
         /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder"/> object.
-        /// </returns>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder UseAllCheckConstraints(
             [NotNull] this DbContextOptionsBuilder optionsBuilder,
             [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
@@ -117,64 +90,33 @@ namespace Microsoft.EntityFrameworkCore
                 .UseDiscriminatorCheckConstraints()
                 .UseValidationCheckConstraints(validationCheckConstraintsOptionsAction);
 
-
-
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with enum check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder{TContext}"/> object.
+        ///     Adds check constraints which enforce that columns mapped to .NET enums only contain values valid for those enums.
         /// </summary>
-        /// <typeparam name="TContext">
-        ///     Entity Framework Core database context type.
-        /// </typeparam>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder{TContext}"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with enum check constraints enabled.
-        /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder{TContext}"/> object.
-        /// </returns>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseEnumCheckConstraints((DbContextOptionsBuilder)optionsBuilder);
 
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with discriminator check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder{TContext}"/> object.
+        ///     Adds check constraints which enforce that discriminator columns in a type-per-hierarchy inheritance mapping only contains
+        ///     valid discriminator values.
         /// </summary>
-        /// <typeparam name="TContext">
-        ///     Entity Framework Core database context type.
-        /// </typeparam>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder{TContext}"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with discriminator check constraints enabled.
-        /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder{TContext}"/> object.
-        /// </returns>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder<TContext> UseDiscriminatorCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseDiscriminatorCheckConstraints((DbContextOptionsBuilder)optionsBuilder);
 
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with validation check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder{TContext}"/> object.
+        ///     Adds check constraints which enforce various .NET standard validation attributes.
         /// </summary>
-        /// <typeparam name="TContext">
-        ///     Entity Framework Core database context type.
-        /// </typeparam>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder{TContext}"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with validation check constraints enabled.
-        /// </param>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <param name="validationCheckConstraintsOptionsAction">
         ///     Configures validation check constraint creation.
         /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder{TContext}"/> object.
-        /// </returns>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder<TContext> UseValidationCheckConstraints<TContext>(
             [NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder,
             [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
@@ -182,23 +124,13 @@ namespace Microsoft.EntityFrameworkCore
             => (DbContextOptionsBuilder<TContext>)UseValidationCheckConstraints((DbContextOptionsBuilder)optionsBuilder, validationCheckConstraintsOptionsAction);
 
         /// <summary>
-        ///     Adds or updates a <see cref="CheckConstraintsOptionsExtension"/>
-        ///     object with all check constraints enabled
-        ///     to the current <see cref="DbContextOptionsBuilder{TContext}"/> object.
+        ///     Adds all check constraints supported by this plugin.
         /// </summary>
-        /// <typeparam name="TContext">
-        ///     Entity Framework Core database context type.
-        /// </typeparam>
-        /// <param name="optionsBuilder">
-        ///     <see cref="DbContextOptionsBuilder{TContext}"/> object having <see cref="CheckConstraintsOptionsExtension"/>
-        ///     added or updated with all check constraints enabled.
-        /// </param>
+        /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <param name="validationCheckConstraintsOptionsAction">
-        ///     Configures validation check constraint creation.
+        ///     An optional action to configure the validation check constraints.
         /// </param>
-        /// <returns>
-        ///     The current <see cref="DbContextOptionsBuilder{TContext}"/> object.
-        /// </returns>
+        /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder<TContext> UseAllCheckConstraints<TContext>(
             [NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder,
             [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)

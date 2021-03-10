@@ -7,11 +7,11 @@ using JetBrains.Annotations;
 namespace EFCore.CheckConstraints
 {
     /// <summary>
-    ///     Sets configuration options for <see cref="Microsoft.EntityFrameworkCore.CheckConstraintsExtensions"/> methods.
+    ///     Configures validation check constraints.
     /// </summary>
     public class ValidationCheckConstraintOptionsBuilder
     {
-        private readonly ValidationCheckConstraintOptions _options = new ValidationCheckConstraintOptions();
+        private readonly ValidationCheckConstraintOptions _options = new();
 
         /// <summary>
         ///     Current validation check constraint configuration.
@@ -19,10 +19,10 @@ namespace EFCore.CheckConstraints
         public virtual ValidationCheckConstraintOptions Options => _options;
 
         /// <summary>
-        ///     Enable or disable creation of regular expression constraints.
+        ///     Enables or disables creation of check constraints which use regular expressions.
         /// </summary>
         /// <param name="useRegex">
-        ///     <c>true</c> if regular expression constraints should be created; <c>false</c> otherwise.
+        ///     <c>true</c> if check constraints which use regular expressions should be created; <c>false</c> otherwise.
         ///     <c>true</c> is the default value.
         /// </param>
         /// <returns>
@@ -35,11 +35,11 @@ namespace EFCore.CheckConstraints
         }
 
         /// <summary>
-        ///     Set regular expression pattern to match phone numbers against.
+        ///     Sets the regular expression pattern to use when validating phone numbers.
         /// </summary>
         /// <param name="phoneRegex">
-        ///     Regular expression pattern string to match phone numbers against.
-        ///     The default pattern string is @"^[\d\s+-.()]*\d[\d\s+-.()]*((ext\.|ext|x)\s*\d+)?\s*$".
+        ///     Regular expression pattern string to use when validating phone numbers.
+        ///     The default pattern is <c>^[\d\s+-.()]*\d[\d\s+-.()]*((ext\.|ext|x)\s*\d+)?\s*$</c>.
         /// </param>
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
@@ -51,11 +51,11 @@ namespace EFCore.CheckConstraints
         }
 
         /// <summary>
-        ///     Set regular expression pattern to match credit card numbers against.
+        ///     Sets the regular expression pattern to use when validating credit card numbers.
         /// </summary>
         /// <param name="creditCardRegex">
-        ///     Regular expression pattern string to match credit card numbers against.
-        ///     The default pattern string is @"^[\d- ]*$".
+        ///     Regular expression pattern string to use when validating credit card numbers.
+        ///     The default pattern is <c>^[\d- ]*$</c>.
         /// </param>
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
@@ -67,11 +67,11 @@ namespace EFCore.CheckConstraints
         }
 
         /// <summary>
-        ///     Set regular expression pattern to match e-mail addresses against.
+        ///     Sets the regular expression pattern to use when validating e-mail addresses.
         /// </summary>
         /// <param name="emailRegex">
-        ///     Regular expression pattern string to match e-mail addresses against.
-        ///     The default pattern string is @"^[^@]+@[^@]+$".
+        ///     Regular expression pattern string to use when validating e-mail addresses.
+        ///     The default pattern is <c>^[^@]+@[^@]+$</c>.
         /// </param>
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
@@ -83,11 +83,11 @@ namespace EFCore.CheckConstraints
         }
 
         /// <summary>
-        ///     Set regular expression pattern to match URLs against.
+        ///     Sets the regular expression pattern to use when validating URLs.
         /// </summary>
         /// <param name="urlRegex">
-        ///     Regular expression pattern string to match URLs against.
-        ///     The default pattern string is @"^(http://|https://|ftp://)".
+        ///     Regular expression pattern string to use when validating URLs.
+        ///     The default pattern is <c>^(http://|https://|ftp://)</c>.
         /// </param>
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
