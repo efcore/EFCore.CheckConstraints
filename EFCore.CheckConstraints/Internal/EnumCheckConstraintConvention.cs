@@ -8,23 +8,13 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal
 {
-    /// <summary>
-    ///     A convention that creates check constraints for enum columns.
-    /// </summary>
     public class EnumCheckConstraintConvention : IModelFinalizingConvention
     {
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
-        /// <summary>
-        ///     Creates a new <see cref="EnumCheckConstraintConvention"/> object.
-        /// </summary>
-        /// <param name="sqlGenerationHelper">
-        ///     Service to help with generation of SQL commands.
-        /// </param>
         public EnumCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
             => _sqlGenerationHelper = sqlGenerationHelper;
 
-        /// <inheritdoc />
         public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
         {
             var sql = new StringBuilder();

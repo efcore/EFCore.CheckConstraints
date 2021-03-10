@@ -17,10 +17,7 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/efcore/EFCore.CheckConstraints</RepositoryUrl>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Platform)'=='AnyCPU'">
-    <DocumentationFile>obj\EFCore.CheckConstraints.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

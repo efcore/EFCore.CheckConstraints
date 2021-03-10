@@ -8,24 +8,13 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal
 {
-    /// <summary>
-    ///     A convention that creates check constraints ensuring that (complete) discriminator columns only have
-    ///     expected values.
-    /// </summary>
     public class DiscriminatorCheckConstraintConvention : IModelFinalizingConvention
     {
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
-        /// <summary>
-        ///     Creates a new <see cref="DiscriminatorCheckConstraintConvention"/> object.
-        /// </summary>
-        /// <param name="sqlGenerationHelper">
-        ///     Service to help with generation of SQL commands.
-        /// </param>
         public DiscriminatorCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
             => _sqlGenerationHelper = sqlGenerationHelper;
 
-        /// <inheritdoc />
         public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
         {
             var sql = new StringBuilder();
