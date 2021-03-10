@@ -32,7 +32,7 @@ namespace EFCore.CheckConstraints.Internal
                 foreach (var property in entityType.GetDeclaredProperties())
                 {
                     var typeMapping = property.FindTypeMapping();
-                    var propertyType = property.ClrType;
+                    var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                     if (propertyType.IsEnum
                         && typeMapping != null
                         && !propertyType.IsDefined(typeof(FlagsAttribute), true)

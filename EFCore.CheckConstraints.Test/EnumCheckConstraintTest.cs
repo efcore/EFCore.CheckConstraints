@@ -30,6 +30,17 @@ namespace EFCore.CheckConstraints.Test
         }
 
         [Fact]
+        public void Nullable()
+        {
+            var entityType = BuildEntityType(e => e.Property<CustomerType?>("Type"));
+
+            var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+            Assert.NotNull(checkConstraint);
+            Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+            Assert.Equal("[Type] IN (0, 1)", checkConstraint.Sql);
+        }
+
+        [Fact]
         public void Value_converter()
         {
             var entityType = BuildEntityType(e => e.Property<CustomerType>("Type").HasConversion<string>());
