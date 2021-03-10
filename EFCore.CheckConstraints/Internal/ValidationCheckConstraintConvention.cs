@@ -12,21 +12,21 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal
 {
-    /// <summary>
-    ///     A convention that creates check constraints for various validation attributes.
-    /// </summary>
     public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
         public const string DefaultPhoneRegex = @"^[\d\s+-.()]*\d[\d\s+-.()]*((ext\.|ext|x)\s*\d+)?\s*$";
+
         public const string DefaultCreditCardRegex = @"^[\d- ]*$";
+
         public const string DefaultEmailAddressRegex = @"^[^@]+@[^@]+$";
+
         public const string DefaultUrlAddressRegex = @"^(http://|https://|ftp://)";
 
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
         private readonly IDatabaseProvider _databaseProvider;
         private readonly RelationalTypeMapping _intTypeMapping;
 
-        private readonly bool _supportsRegex;
+        private readonly bool _useRegex;
         private readonly string _phoneRegex, _creditCardRegex, _emailAddressRegex, _urlRegex;
 
         public ValidationCheckConstraintConvention(
@@ -39,14 +39,13 @@ namespace EFCore.CheckConstraints.Internal
             _databaseProvider = databaseProvider;
             _intTypeMapping = relationalTypeMappingSource.FindMapping(typeof(int));
 
-            _supportsRegex = SupportsRegex;
+            _useRegex = options.UseRegex && SupportsRegex;
             _phoneRegex = options.PhoneRegex ?? DefaultPhoneRegex;
             _creditCardRegex = options.CreditCardRegex ?? DefaultCreditCardRegex;
             _emailAddressRegex = options.EmailAddressRegex ?? DefaultEmailAddressRegex;
             _urlRegex = options.UrlRegex ?? DefaultUrlAddressRegex;
         }
 
-        /// <inheritdoc />
         public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
         {
             var sql = new StringBuilder();
@@ -77,7 +76,7 @@ namespace EFCore.CheckConstraints.Internal
                     ProcessMinLength(property, memberInfo, tableName, columnName, sql);
                     ProcessStringLengthMinimumLength(property, memberInfo, tableName, columnName, sql);
 
-                    if (_supportsRegex)
+                    if (_useRegex)
                     {
                         ProcessPhoneNumber(property, memberInfo, tableName, columnName, sql);
                         ProcessCreditCard(property, memberInfo, tableName, columnName, sql);

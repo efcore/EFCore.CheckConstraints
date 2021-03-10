@@ -1,17 +1,13 @@
 using System.Linq;
 using System.Text;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal
 {
-    /// <summary>
-    ///     A convention that creates check constraints ensuring that (complete) discriminator columns only have
-    ///     expected values.
-    /// </summary>
     public class DiscriminatorCheckConstraintConvention : IModelFinalizingConvention
     {
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
@@ -19,7 +15,6 @@ namespace EFCore.CheckConstraints.Internal
         public DiscriminatorCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
             => _sqlGenerationHelper = sqlGenerationHelper;
 
-        /// <inheritdoc />
         public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
         {
             var sql = new StringBuilder();

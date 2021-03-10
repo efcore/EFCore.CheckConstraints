@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using JetBrains.Annotations;
 
 namespace EFCore.CheckConstraints.Internal
 {
@@ -31,8 +31,11 @@ namespace EFCore.CheckConstraints.Internal
         protected virtual CheckConstraintsOptionsExtension Clone() => new CheckConstraintsOptionsExtension(this);
 
         public virtual bool AreEnumCheckConstraintsEnabled => _enumCheckConstraintsEnabled;
+
         public virtual bool AreDiscriminatorCheckConstraintsEnabled => _discriminatorCheckConstraintsEnabled;
+
         public virtual bool AreValidationCheckConstraintsEnabled => _validationCheckConstraintsOptions != null;
+
         public virtual ValidationCheckConstraintOptions ValidationCheckConstraintOptions => _validationCheckConstraintsOptions;
 
         public virtual CheckConstraintsOptionsExtension WithEnumCheckConstraintsEnabled(
