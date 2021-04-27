@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using JetBrains.Annotations;
@@ -10,14 +11,14 @@ namespace EFCore.CheckConstraints.Internal
 {
     public class CheckConstraintsOptionsExtension : IDbContextOptionsExtension
     {
-        private DbContextOptionsExtensionInfo _info;
+        private DbContextOptionsExtensionInfo? _info;
         private bool _enumCheckConstraintsEnabled;
         private bool _discriminatorCheckConstraintsEnabled;
-        private ValidationCheckConstraintOptions _validationCheckConstraintsOptions;
+        private ValidationCheckConstraintOptions? _validationCheckConstraintsOptions;
 
         public CheckConstraintsOptionsExtension() {}
 
-        protected CheckConstraintsOptionsExtension([NotNull] CheckConstraintsOptionsExtension copyFrom)
+        protected CheckConstraintsOptionsExtension(CheckConstraintsOptionsExtension copyFrom)
         {
             _enumCheckConstraintsEnabled = copyFrom._enumCheckConstraintsEnabled;
             _discriminatorCheckConstraintsEnabled = copyFrom._discriminatorCheckConstraintsEnabled;
@@ -28,15 +29,16 @@ namespace EFCore.CheckConstraints.Internal
 
         public virtual DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
 
-        protected virtual CheckConstraintsOptionsExtension Clone() => new CheckConstraintsOptionsExtension(this);
+        protected virtual CheckConstraintsOptionsExtension Clone() => new(this);
 
         public virtual bool AreEnumCheckConstraintsEnabled => _enumCheckConstraintsEnabled;
 
         public virtual bool AreDiscriminatorCheckConstraintsEnabled => _discriminatorCheckConstraintsEnabled;
 
+        [MemberNotNullWhen(true, nameof(_validationCheckConstraintsOptions))]
         public virtual bool AreValidationCheckConstraintsEnabled => _validationCheckConstraintsOptions != null;
 
-        public virtual ValidationCheckConstraintOptions ValidationCheckConstraintOptions => _validationCheckConstraintsOptions;
+        public virtual ValidationCheckConstraintOptions? ValidationCheckConstraintOptions => _validationCheckConstraintsOptions;
 
         public virtual CheckConstraintsOptionsExtension WithEnumCheckConstraintsEnabled(
             bool enumCheckConstraintsEnabled)
@@ -69,7 +71,7 @@ namespace EFCore.CheckConstraints.Internal
 
         internal sealed class ExtensionInfo : DbContextOptionsExtensionInfo
         {
-            private string _logFragment;
+            private string? _logFragment;
 
             public ExtensionInfo(IDbContextOptionsExtension extension) : base(extension) {}
 
@@ -82,7 +84,7 @@ namespace EFCore.CheckConstraints.Internal
             {
                 get
                 {
-                    if (_logFragment == null)
+                    if (_logFragment is null)
                     {
                         var builder = new StringBuilder("using check constraints (");
                         var isFirst = true;
@@ -123,20 +125,30 @@ namespace EFCore.CheckConstraints.Internal
                 }
             }
 
-            public override long GetServiceProviderHashCode()
+            /// <inheritdoc />
+            public override int GetServiceProviderHashCode()
                 => HashCode.Combine(
                     Extension._enumCheckConstraintsEnabled.GetHashCode(),
                     Extension._discriminatorCheckConstraintsEnabled.GetHashCode(),
                     Extension.ValidationCheckConstraintOptions?.GetHashCode());
 
+            /// <inheritdoc />
+            public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
+                => other is ExtensionInfo;
+
+            /// <inheritdoc />
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
             {
                 debugInfo["CheckConstraints:Enums"]
                     = Extension._enumCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
                 debugInfo["CheckConstraints:Discriminators"]
                     = Extension._discriminatorCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
-                debugInfo["CheckConstraints:Validation"]
-                    = Extension._validationCheckConstraintsOptions?.GetHashCode().ToString(CultureInfo.InvariantCulture);
+
+                if (Extension._validationCheckConstraintsOptions is not null)
+                {
+                    debugInfo["CheckConstraints:Validation"]
+                        = Extension._validationCheckConstraintsOptions.GetHashCode().ToString(CultureInfo.InvariantCulture);
+                }
             }
         }
     }

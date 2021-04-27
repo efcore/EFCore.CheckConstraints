@@ -1,10 +1,11 @@
 ﻿<Project>
   <PropertyGroup>
-    <EFCoreVersion>5.0.12</EFCoreVersion>
+    <EFCoreVersion>6.0.0</EFCoreVersion>
+    <MicrosoftExtensionsVersion>6.0.0</MicrosoftExtensionsVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EFCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EFCoreVersion)" />
 

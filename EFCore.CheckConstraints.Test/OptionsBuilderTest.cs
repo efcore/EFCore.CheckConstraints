@@ -21,7 +21,7 @@ namespace EFCore.CheckConstraints.Test
             var options = extensions[0] as CheckConstraintsOptionsExtension;
 
             Assert.NotNull(options);
-            Assert.True(options.AreDiscriminatorCheckConstraintsEnabled);
+            Assert.True(options!.AreDiscriminatorCheckConstraintsEnabled);
             Assert.False(options.AreEnumCheckConstraintsEnabled);
             Assert.False(options.AreValidationCheckConstraintsEnabled);
             Assert.Equal("using check constraints (discriminators)", options.Info.LogFragment);
@@ -42,7 +42,7 @@ namespace EFCore.CheckConstraints.Test
             var options = extensions[0] as CheckConstraintsOptionsExtension;
 
             Assert.NotNull(options);
-            Assert.False(options.AreDiscriminatorCheckConstraintsEnabled);
+            Assert.False(options!.AreDiscriminatorCheckConstraintsEnabled);
             Assert.True(options.AreEnumCheckConstraintsEnabled);
             Assert.False(options.AreValidationCheckConstraintsEnabled);
             Assert.Equal("using check constraints (enums)", options.Info.LogFragment);
@@ -63,7 +63,7 @@ namespace EFCore.CheckConstraints.Test
             var options = extensions[0] as CheckConstraintsOptionsExtension;
 
             Assert.NotNull(options);
-            Assert.False(options.AreDiscriminatorCheckConstraintsEnabled);
+            Assert.False(options!.AreDiscriminatorCheckConstraintsEnabled);
             Assert.False(options.AreEnumCheckConstraintsEnabled);
             Assert.True(options.AreValidationCheckConstraintsEnabled);
             Assert.Equal("using check constraints (validation)", options.Info.LogFragment);
@@ -71,7 +71,8 @@ namespace EFCore.CheckConstraints.Test
 
             var validationOptions = options.ValidationCheckConstraintOptions;
 
-            Assert.Null(validationOptions.CreditCardRegex);
+            Assert.NotNull(validationOptions);
+            Assert.Null(validationOptions!.CreditCardRegex);
             Assert.Null(validationOptions.EmailAddressRegex);
             Assert.Null(validationOptions.PhoneRegex);
             Assert.Null(validationOptions.UrlRegex);
@@ -92,7 +93,7 @@ namespace EFCore.CheckConstraints.Test
             var options = extensions[0] as CheckConstraintsOptionsExtension;
 
             Assert.NotNull(options);
-            Assert.False(options.AreDiscriminatorCheckConstraintsEnabled);
+            Assert.False(options!.AreDiscriminatorCheckConstraintsEnabled);
             Assert.False(options.AreEnumCheckConstraintsEnabled);
             Assert.True(options.AreValidationCheckConstraintsEnabled);
             Assert.Equal("using check constraints (validation)", options.Info.LogFragment);
@@ -100,7 +101,8 @@ namespace EFCore.CheckConstraints.Test
 
             var validationOptions = options.ValidationCheckConstraintOptions;
 
-            Assert.Null(validationOptions.CreditCardRegex);
+            Assert.NotNull(validationOptions);
+            Assert.Null(validationOptions!.CreditCardRegex);
             Assert.Null(validationOptions.EmailAddressRegex);
             Assert.Null(validationOptions.PhoneRegex);
             Assert.Null(validationOptions.UrlRegex);
@@ -121,14 +123,15 @@ namespace EFCore.CheckConstraints.Test
             var options = extensions[0] as CheckConstraintsOptionsExtension;
 
             Assert.NotNull(options);
-            Assert.True(options.AreDiscriminatorCheckConstraintsEnabled);
+            Assert.True(options!.AreDiscriminatorCheckConstraintsEnabled);
             Assert.True(options.AreEnumCheckConstraintsEnabled);
             Assert.True(options.AreValidationCheckConstraintsEnabled);
             Assert.NotNull(options.ValidationCheckConstraintOptions);
 
             var validationOptions = options.ValidationCheckConstraintOptions;
 
-            Assert.Null(validationOptions.CreditCardRegex);
+            Assert.NotNull(validationOptions);
+            Assert.Null(validationOptions!.CreditCardRegex);
             Assert.Null(validationOptions.EmailAddressRegex);
             Assert.Null(validationOptions.PhoneRegex);
             Assert.Null(validationOptions.UrlRegex);
@@ -149,14 +152,15 @@ namespace EFCore.CheckConstraints.Test
             var options = extensions[0] as CheckConstraintsOptionsExtension;
 
             Assert.NotNull(options);
-            Assert.True(options.AreDiscriminatorCheckConstraintsEnabled);
+            Assert.True(options!.AreDiscriminatorCheckConstraintsEnabled);
             Assert.True(options.AreEnumCheckConstraintsEnabled);
             Assert.True(options.AreValidationCheckConstraintsEnabled);
             Assert.NotNull(options.ValidationCheckConstraintOptions);
 
             var validationOptions = options.ValidationCheckConstraintOptions;
 
-            Assert.Null(validationOptions.CreditCardRegex);
+            Assert.NotNull(validationOptions);
+            Assert.Null(validationOptions!.CreditCardRegex);
             Assert.Null(validationOptions.EmailAddressRegex);
             Assert.Null(validationOptions.PhoneRegex);
             Assert.Null(validationOptions.UrlRegex);
