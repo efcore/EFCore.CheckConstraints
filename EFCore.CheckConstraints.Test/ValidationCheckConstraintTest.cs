@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -117,34 +118,42 @@ namespace EFCore.CheckConstraints.Test
         class Blog
         {
             public int Id { get; set; }
+
             [Range(1, 5)]
             public int Rating { get; set; }
+
             [MinLength(4)]
-            public string Name { get; set; }
+            public string Name { get; set; } = null!;
+
             [StringLength(100, MinimumLength = 1)]
-            public string Required { get; set; }
+            public string Required { get; set; } = null!;
+
             [Phone]
-            public string PhoneNumber { get; set; }
+            public string PhoneNumber { get; set; } = null!;
+
             [CreditCard]
-            public string CreditCard { get; set; }
+            public string CreditCard { get; set; } = null!;
+
             [EmailAddress]
-            public string Email { get; set; }
+            public string Email { get; set; } = null!;
+
             [Url]
-            public string Address { get; set; }
+            public string Address { get; set; } = null!;
+
             [RegularExpression("^A")]
-            public string StartsWithA { get; set; }
+            public string StartsWithA { get; set; } = null!;
         }
         // ReSharper restore UnusedMember.Local
 
         private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex)
         {
             var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
-            var conventionSet = SqlServerTestHelpers.Instance.CreateConventionSetBuilder().CreateConventionSet();
-            ConventionSet.Remove(conventionSet.ModelFinalizedConventions, typeof(ValidatingConvention));
             conventionSet.ModelFinalizingConventions.Add(
                 new ValidationCheckConstraintConvention(
-                    new ValidationCheckConstraintOptions() { UseRegex = useRegex },
+                    new ValidationCheckConstraintOptions { UseRegex = useRegex },
+                    serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
                     serviceProvider.GetRequiredService<ISqlGenerationHelper>(),
                     serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
                     serviceProvider.GetRequiredService<IDatabaseProvider>()));
@@ -154,7 +163,7 @@ namespace EFCore.CheckConstraints.Test
             return builder.FinalizeModel();
         }
 
-        private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>> buildAction = null, bool useRegex = true)
+        private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true)
             where TEntity : class
         {
             return BuildModel(buildAction is null

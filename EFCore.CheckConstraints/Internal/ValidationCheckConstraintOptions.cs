@@ -20,19 +20,19 @@ namespace EFCore.CheckConstraints.Internal
 
         public bool UseRegex { get; set; } = true;
 
-        public string PhoneRegex { get; set; }
+        public string? PhoneRegex { get; set; }
 
-        public string CreditCardRegex { get; set; }
+        public string? CreditCardRegex { get; set; }
 
-        public string EmailAddressRegex { get; set; }
+        public string? EmailAddressRegex { get; set; }
 
-        public string UrlRegex { get; set; }
+        public string? UrlRegex { get; set; }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => obj is ValidationCheckConstraintOptions other && Equals(other);
 
-        public bool Equals(ValidationCheckConstraintOptions other)
-            => other != null
+        public bool Equals(ValidationCheckConstraintOptions? other)
+            => other is not null
                 && UseRegex == other.UseRegex
                 && PhoneRegex == other.PhoneRegex
                 && CreditCardRegex == other.CreditCardRegex

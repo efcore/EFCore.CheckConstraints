@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -96,13 +97,13 @@ namespace EFCore.CheckConstraints.Test
                 });
             });
 
-            var customerCheckConstraint = Assert.Single(model.FindEntityType("Customer").GetCheckConstraints());
+            var customerCheckConstraint = Assert.Single(model.FindEntityType("Customer")!.GetCheckConstraints());
             Assert.NotNull(customerCheckConstraint);
-            Assert.Equal("CK_Customer_Type_Enum", customerCheckConstraint.Name);
+            Assert.Equal("CK_Customer_Type_Enum", customerCheckConstraint!.Name);
 
-            var specialCustomerCheckConstraint = Assert.Single(model.FindEntityType("SpecialCustomer").GetCheckConstraints());
-            Assert.NotNull(specialCustomerCheckConstraint);
-            Assert.Equal("CK_Customer_AnotherType_Enum", specialCustomerCheckConstraint.Name);
+            Assert.Collection(model.FindEntityType("SpecialCustomer")!.GetCheckConstraints().OrderBy(ck => ck.Name),
+                ck => Assert.Equal("CK_Customer_AnotherType_Enum", ck.Name),
+                ck => Assert.Same(customerCheckConstraint, ck));
         }
 
         [Fact]
@@ -123,13 +124,14 @@ namespace EFCore.CheckConstraints.Test
                 });
             });
 
-            var customerCheckConstraint = Assert.Single(model.FindEntityType("Customer").GetCheckConstraints());
+            var customerCheckConstraint = Assert.Single(model.FindEntityType("Customer")!.GetCheckConstraints());
             Assert.NotNull(customerCheckConstraint);
-            Assert.Equal("CK_Customer_Type_Enum", customerCheckConstraint.Name);
+            Assert.Equal("CK_Customer_Type_Enum", customerCheckConstraint!.Name);
 
-            var specialCustomerCheckConstraint = Assert.Single(model.FindEntityType("SpecialCustomer").GetCheckConstraints());
-            Assert.NotNull(specialCustomerCheckConstraint);
-            Assert.Equal("CK_SpecialCustomer_AnotherType_Enum", specialCustomerCheckConstraint.Name);
+            Assert.Collection(
+                model.FindEntityType("SpecialCustomer")!.GetCheckConstraints().OrderBy(ck => ck.Name),
+                ck => Assert.Same(customerCheckConstraint, ck),
+                ck => Assert.Equal("CK_SpecialCustomer_AnotherType_Enum", ck.Name));
         }
 
         #region Support
@@ -152,11 +154,12 @@ namespace EFCore.CheckConstraints.Test
         private IModel BuildModel(Action<ModelBuilder> buildAction)
         {
             var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
-            var conventionSet = SqlServerTestHelpers.Instance.CreateConventionSetBuilder().CreateConventionSet();
-            ConventionSet.Remove(conventionSet.ModelFinalizedConventions, typeof(ValidatingConvention));
             conventionSet.ModelFinalizingConventions.Add(
-                new EnumCheckConstraintConvention(serviceProvider.GetRequiredService<ISqlGenerationHelper>()));
+                new EnumCheckConstraintConvention(
+                    serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
+                    serviceProvider.GetRequiredService<ISqlGenerationHelper>()));
 
             var builder = new ModelBuilder(conventionSet);
             buildAction(builder);

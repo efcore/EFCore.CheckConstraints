@@ -17,8 +17,7 @@ namespace Microsoft.EntityFrameworkCore
         /// </summary>
         /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
-        public static DbContextOptionsBuilder UseEnumCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder)
+        public static DbContextOptionsBuilder UseEnumCheckConstraints(this DbContextOptionsBuilder optionsBuilder)
         {
             Check.NotNull(optionsBuilder, nameof(optionsBuilder));
 
@@ -36,8 +35,7 @@ namespace Microsoft.EntityFrameworkCore
         /// </summary>
         /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
-        public static DbContextOptionsBuilder UseDiscriminatorCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder)
+        public static DbContextOptionsBuilder UseDiscriminatorCheckConstraints(this DbContextOptionsBuilder optionsBuilder)
         {
             Check.NotNull(optionsBuilder, nameof(optionsBuilder));
 
@@ -58,8 +56,8 @@ namespace Microsoft.EntityFrameworkCore
         /// </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder UseValidationCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder,
-            [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
+            this DbContextOptionsBuilder optionsBuilder,
+            Action<ValidationCheckConstraintOptionsBuilder>? validationCheckConstraintsOptionsAction = null)
         {
             Check.NotNull(optionsBuilder, nameof(optionsBuilder));
 
@@ -83,8 +81,8 @@ namespace Microsoft.EntityFrameworkCore
         /// </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder UseAllCheckConstraints(
-            [NotNull] this DbContextOptionsBuilder optionsBuilder,
-            [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
+            this DbContextOptionsBuilder optionsBuilder,
+            Action<ValidationCheckConstraintOptionsBuilder>? validationCheckConstraintsOptionsAction = null)
             => optionsBuilder
                 .UseEnumCheckConstraints()
                 .UseDiscriminatorCheckConstraints()
@@ -95,7 +93,7 @@ namespace Microsoft.EntityFrameworkCore
         /// </summary>
         /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
-        public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
+        public static DbContextOptionsBuilder<TContext> UseEnumCheckConstraints<TContext>(this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseEnumCheckConstraints((DbContextOptionsBuilder)optionsBuilder);
 
@@ -105,7 +103,7 @@ namespace Microsoft.EntityFrameworkCore
         /// </summary>
         /// <param name="optionsBuilder"> The builder being used to configure the context. </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
-        public static DbContextOptionsBuilder<TContext> UseDiscriminatorCheckConstraints<TContext>([NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder)
+        public static DbContextOptionsBuilder<TContext> UseDiscriminatorCheckConstraints<TContext>(this DbContextOptionsBuilder<TContext> optionsBuilder)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseDiscriminatorCheckConstraints((DbContextOptionsBuilder)optionsBuilder);
 
@@ -118,8 +116,8 @@ namespace Microsoft.EntityFrameworkCore
         /// </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder<TContext> UseValidationCheckConstraints<TContext>(
-            [NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder,
-            [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
+            this DbContextOptionsBuilder<TContext> optionsBuilder,
+            Action<ValidationCheckConstraintOptionsBuilder>? validationCheckConstraintsOptionsAction = null)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseValidationCheckConstraints((DbContextOptionsBuilder)optionsBuilder, validationCheckConstraintsOptionsAction);
 
@@ -132,8 +130,8 @@ namespace Microsoft.EntityFrameworkCore
         /// </param>
         /// <returns> The same builder instance so that multiple calls can be chained. </returns>
         public static DbContextOptionsBuilder<TContext> UseAllCheckConstraints<TContext>(
-            [NotNull] this DbContextOptionsBuilder<TContext> optionsBuilder,
-            [CanBeNull] Action<ValidationCheckConstraintOptionsBuilder> validationCheckConstraintsOptionsAction = null)
+            this DbContextOptionsBuilder<TContext> optionsBuilder,
+            Action<ValidationCheckConstraintOptionsBuilder>? validationCheckConstraintsOptionsAction = null)
             where TContext : DbContext
             => (DbContextOptionsBuilder<TContext>)UseAllCheckConstraints((DbContextOptionsBuilder)optionsBuilder, validationCheckConstraintsOptionsAction);
     }

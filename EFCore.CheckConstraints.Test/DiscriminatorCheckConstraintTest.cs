@@ -2,7 +2,7 @@ using System;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,9 +29,9 @@ namespace EFCore.CheckConstraints.Test
                 });
             });
 
-            var checkConstraint = Assert.Single(model.FindEntityType("Parent").GetCheckConstraints());
+            var checkConstraint = Assert.Single(model.FindEntityType("Parent")!.GetCheckConstraints());
             Assert.NotNull(checkConstraint);
-            Assert.Equal("CK_Parent_Discriminator", checkConstraint.Name);
+            Assert.Equal("CK_Parent_Discriminator", checkConstraint!.Name);
             Assert.Equal("[Discriminator] IN (N'Child', N'Parent')", checkConstraint.Sql);
         }
 
@@ -45,7 +45,7 @@ namespace EFCore.CheckConstraints.Test
                 b.Entity<Derived>();
             });
 
-            var checkConstraint = Assert.Single(model.FindEntityType(typeof(Base)).GetCheckConstraints());
+            var checkConstraint = Assert.Single(model.FindEntityType(typeof(Base))!.GetCheckConstraints());
             Assert.NotNull(checkConstraint);
             Assert.Equal("CK_Base_Discriminator", checkConstraint.Name);
             Assert.Equal("[Discriminator] IN (N'Base', N'Derived')", checkConstraint.Sql);
@@ -59,12 +59,12 @@ namespace EFCore.CheckConstraints.Test
 
         private abstract class Intermediate : Base
         {
-            public string Value { get; set; }
+            public string Value { get; set; }  = null!;
         }
 
         private class Derived : Intermediate
         {
-            public string Property { get; set; }
+            public string Property { get; set; } = null!;
         }
 
         #region Support
@@ -72,15 +72,16 @@ namespace EFCore.CheckConstraints.Test
         private IModel BuildModel(Action<ModelBuilder> buildAction)
         {
             var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
-            var conventionSet = SqlServerTestHelpers.Instance.CreateConventionSetBuilder().CreateConventionSet();
-            ConventionSet.Remove(conventionSet.ModelFinalizedConventions, typeof(ValidatingConvention));
             conventionSet.ModelFinalizingConventions.Add(
-                new DiscriminatorCheckConstraintConvention(serviceProvider.GetRequiredService<ISqlGenerationHelper>()));
+                new DiscriminatorCheckConstraintConvention(
+                    serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
+                    serviceProvider.GetRequiredService<ISqlGenerationHelper>()));
 
-            var builder = new ModelBuilder(conventionSet);
-            buildAction(builder);
-            return builder.FinalizeModel();
+            var modelBuilder = new ModelBuilder(conventionSet);
+            buildAction(modelBuilder);
+            return modelBuilder.FinalizeModel();
         }
 
         #endregion

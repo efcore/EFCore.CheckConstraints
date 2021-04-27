@@ -44,7 +44,7 @@ namespace EFCore.CheckConstraints
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
         /// </returns>
-        public virtual ValidationCheckConstraintOptionsBuilder UsePhoneRegex([CanBeNull] string phoneRegex)
+        public virtual ValidationCheckConstraintOptionsBuilder UsePhoneRegex(string? phoneRegex)
         {
             _options.PhoneRegex = phoneRegex;
             return this;
@@ -60,7 +60,7 @@ namespace EFCore.CheckConstraints
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
         /// </returns>
-        public virtual ValidationCheckConstraintOptionsBuilder UseCreditCardRegex([CanBeNull] string creditCardRegex)
+        public virtual ValidationCheckConstraintOptionsBuilder UseCreditCardRegex(string? creditCardRegex)
         {
             _options.CreditCardRegex = creditCardRegex;
             return this;
@@ -76,7 +76,7 @@ namespace EFCore.CheckConstraints
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
         /// </returns>
-        public virtual ValidationCheckConstraintOptionsBuilder UseEmailRegex([CanBeNull] string emailRegex)
+        public virtual ValidationCheckConstraintOptionsBuilder UseEmailRegex(string? emailRegex)
         {
             _options.EmailAddressRegex = emailRegex;
             return this;
@@ -92,7 +92,7 @@ namespace EFCore.CheckConstraints
         /// <returns>
         ///     The current <see cref="ValidationCheckConstraintOptionsBuilder"/> object.
         /// </returns>
-        public virtual ValidationCheckConstraintOptionsBuilder UseUrlRegex([CanBeNull] string urlRegex)
+        public virtual ValidationCheckConstraintOptionsBuilder UseUrlRegex(string? urlRegex)
         {
             _options.UrlRegex = urlRegex;
             return this;

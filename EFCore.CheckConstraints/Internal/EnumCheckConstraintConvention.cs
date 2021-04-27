@@ -4,16 +4,23 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal
 {
     public class EnumCheckConstraintConvention : IModelFinalizingConvention
     {
+        private readonly IRelationalTypeMappingSource _typeMappingSource;
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
 
-        public EnumCheckConstraintConvention(ISqlGenerationHelper sqlGenerationHelper)
-            => _sqlGenerationHelper = sqlGenerationHelper;
+        public EnumCheckConstraintConvention(
+            IRelationalTypeMappingSource typeMappingSource,
+            ISqlGenerationHelper sqlGenerationHelper)
+        {
+            _typeMappingSource = typeMappingSource;
+            _sqlGenerationHelper = sqlGenerationHelper;
+        }
 
         public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
         {
@@ -31,12 +38,13 @@ namespace EFCore.CheckConstraints.Internal
 
                 foreach (var property in entityType.GetDeclaredProperties())
                 {
-                    var typeMapping = property.FindTypeMapping();
+                    var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping()
+                        ?? _typeMappingSource.FindMapping((IProperty)property);
                     var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                     if (propertyType.IsEnum
                         && typeMapping != null
                         && !propertyType.IsDefined(typeof(FlagsAttribute), true)
-                        && property.GetColumnName(tableIdentifier) is string columnName)
+                        && property.GetColumnName(tableIdentifier) is { } columnName)
                     {
                         var enumValues = Enum.GetValues(propertyType);
                         if (enumValues.Length <= 0)
@@ -46,11 +54,11 @@ namespace EFCore.CheckConstraints.Internal
 
                         sql.Clear();
 
-                        sql.Append(_sqlGenerationHelper.DelimitIdentifier(property.GetColumnName(tableIdentifier)));
+                        sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
                         sql.Append(" IN (");
                         foreach (var item in enumValues)
                         {
-                            var value = ((RelationalTypeMapping)typeMapping).GenerateSqlLiteral(item);
+                            var value = typeMapping.GenerateSqlLiteral(item);
                             sql.Append($"{value}, ");
                         }
 

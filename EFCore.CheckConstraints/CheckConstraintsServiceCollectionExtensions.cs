@@ -28,8 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>
         /// The same service collection so that multiple calls can be chained.
         /// </returns>
-        public static IServiceCollection AddEntityFrameworkCheckConstraints(
-            [NotNull] this IServiceCollection serviceCollection)
+        public static IServiceCollection AddEntityFrameworkCheckConstraints(this IServiceCollection serviceCollection)
         {
             Check.NotNull(serviceCollection, nameof(serviceCollection));
 

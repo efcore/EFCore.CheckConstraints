@@ -22,6 +22,7 @@ namespace EFCore.CheckConstraints.Internal
 
         public const string DefaultUrlAddressRegex = @"^(http://|https://|ftp://)";
 
+        private readonly IRelationalTypeMappingSource _typeMappingSource;
         private readonly ISqlGenerationHelper _sqlGenerationHelper;
         private readonly IDatabaseProvider _databaseProvider;
         private readonly RelationalTypeMapping _intTypeMapping;
@@ -31,13 +32,15 @@ namespace EFCore.CheckConstraints.Internal
 
         public ValidationCheckConstraintConvention(
             ValidationCheckConstraintOptions options,
+            IRelationalTypeMappingSource typeMappingSource,
             ISqlGenerationHelper sqlGenerationHelper,
             IRelationalTypeMappingSource relationalTypeMappingSource,
             IDatabaseProvider databaseProvider)
         {
+            _typeMappingSource = typeMappingSource;
             _sqlGenerationHelper = sqlGenerationHelper;
             _databaseProvider = databaseProvider;
-            _intTypeMapping = relationalTypeMappingSource.FindMapping(typeof(int));
+            _intTypeMapping = relationalTypeMappingSource.FindMapping(typeof(int))!;
 
             _useRegex = options.UseRegex && SupportsRegex;
             _phoneRegex = options.PhoneRegex ?? DefaultPhoneRegex;
@@ -60,7 +63,7 @@ namespace EFCore.CheckConstraints.Internal
 
                 foreach (var property in entityType.GetDeclaredProperties().Where(p => p.PropertyInfo != null || p.FieldInfo != null))
                 {
-                    var memberInfo = (MemberInfo)property.PropertyInfo ?? property.FieldInfo;
+                    var memberInfo = (MemberInfo?)property.PropertyInfo ?? property.FieldInfo;
                     if (memberInfo is null)
                     {
                         continue;
@@ -95,8 +98,14 @@ namespace EFCore.CheckConstraints.Internal
             string columnName,
             StringBuilder sql)
         {
-            if (!(memberInfo.GetCustomAttribute<RangeAttribute>() is RangeAttribute attribute)
-                || !(property.FindTypeMapping() is RelationalTypeMapping typeMapping)
+            if (!(memberInfo.GetCustomAttribute<RangeAttribute>() is RangeAttribute attribute))
+            {
+                return;
+            }
+
+            var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping() ?? _typeMappingSource.FindMapping((IProperty)property);
+
+            if (typeMapping is null
                 || attribute.Minimum.GetType() != typeMapping.ClrType
                 || attribute.Maximum.GetType() != typeMapping.ClrType)
             {
