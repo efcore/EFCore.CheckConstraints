@@ -23,7 +23,7 @@ namespace EFCore.CheckConstraints.Internal
                 .GetEntityTypes()
                 .GroupBy(e => e.GetRootType())
                 .Where(g => g.Key.GetDiscriminatorProperty() != null && g.Key.GetIsDiscriminatorMappingComplete())
-                .Select(g => (g.Key, g.Select(e => e.GetDiscriminatorValue()))))
+                .Select(g => (g.Key, g.Where(e => !e.IsAbstract()).Select(e => e.GetDiscriminatorValue()))))
             {
                 if (!(StoreObjectIdentifier.Create(rootEntityType, StoreObjectType.Table) is StoreObjectIdentifier tableIdentifier))
                 {

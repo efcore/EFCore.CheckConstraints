@@ -35,6 +35,38 @@ namespace EFCore.CheckConstraints.Test
             Assert.Equal("[Discriminator] IN (N'Child', N'Parent')", checkConstraint.Sql);
         }
 
+        [Fact]
+        public void Generate_check_constraint_skips_abstract_types()
+        {
+            var model = BuildModel(b =>
+            {
+                b.Entity<Base>();
+                b.Entity<Intermediate>();
+                b.Entity<Derived>();
+            });
+
+            var checkConstraint = Assert.Single(model.FindEntityType(typeof(Base)).GetCheckConstraints());
+            Assert.NotNull(checkConstraint);
+            Assert.Equal("CK_Base_Discriminator", checkConstraint.Name);
+            Assert.Equal("[Discriminator] IN (N'Base', N'Derived')", checkConstraint.Sql);
+        }
+
+        private class Base
+        {
+            public int Id { get; set; }
+
+        }
+
+        private abstract class Intermediate : Base
+        {
+            public string Value { get; set; }
+        }
+
+        private class Derived : Intermediate
+        {
+            public string Property { get; set; }
+        }
+
         #region Support
 
         private IModel BuildModel(Action<ModelBuilder> buildAction)
