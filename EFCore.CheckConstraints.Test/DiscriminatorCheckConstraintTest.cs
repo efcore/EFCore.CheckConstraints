@@ -2,7 +2,6 @@ using System;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
@@ -73,12 +72,7 @@ namespace EFCore.CheckConstraints.Test
         private IModel BuildModel(Action<ModelBuilder> buildAction)
         {
             var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
-
-            var conventionSet = SqlServerTestHelpers
-                .Instance
-                .CreateContextServices()
-                .GetRequiredService<IConventionSetBuilder>()
-                .CreateConventionSet();
+            var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
             conventionSet.ModelFinalizingConventions.Add(
                 new DiscriminatorCheckConstraintConvention(
