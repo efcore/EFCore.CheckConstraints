@@ -10,7 +10,7 @@ The first step is to install the [EFCore.CheckConstraints nuget package](https:/
 
 ## Validation constraints
 
-.NET comes with some built-in validation attributes, which you can use to declaratively enforce certain constraints on properties. These are typically used by web frameworks such as ASP.NET to validate data provided by users - but we can enforce them in the database as well:
+.NET comes with some [built-in validation attributes](https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations), which you can use to declaratively enforce certain constraints on properties. These are typically used by web frameworks such as ASP.NET to validate data provided by users - but we can enforce them in the database as well:
 
 ```c#
 public class Blog
