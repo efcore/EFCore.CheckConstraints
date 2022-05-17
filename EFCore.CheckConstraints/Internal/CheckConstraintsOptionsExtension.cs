@@ -7,148 +7,147 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EFCore.CheckConstraints.Internal
+namespace EFCore.CheckConstraints.Internal;
+
+public class CheckConstraintsOptionsExtension : IDbContextOptionsExtension
 {
-    public class CheckConstraintsOptionsExtension : IDbContextOptionsExtension
+    private DbContextOptionsExtensionInfo? _info;
+    private bool _enumCheckConstraintsEnabled;
+    private bool _discriminatorCheckConstraintsEnabled;
+    private ValidationCheckConstraintOptions? _validationCheckConstraintsOptions;
+
+    public CheckConstraintsOptionsExtension() {}
+
+    protected CheckConstraintsOptionsExtension(CheckConstraintsOptionsExtension copyFrom)
     {
-        private DbContextOptionsExtensionInfo? _info;
-        private bool _enumCheckConstraintsEnabled;
-        private bool _discriminatorCheckConstraintsEnabled;
-        private ValidationCheckConstraintOptions? _validationCheckConstraintsOptions;
+        _enumCheckConstraintsEnabled = copyFrom._enumCheckConstraintsEnabled;
+        _discriminatorCheckConstraintsEnabled = copyFrom._discriminatorCheckConstraintsEnabled;
+        _validationCheckConstraintsOptions = copyFrom._validationCheckConstraintsOptions is null
+            ? null
+            : new ValidationCheckConstraintOptions(copyFrom._validationCheckConstraintsOptions);
+    }
 
-        public CheckConstraintsOptionsExtension() {}
+    public virtual DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
 
-        protected CheckConstraintsOptionsExtension(CheckConstraintsOptionsExtension copyFrom)
+    protected virtual CheckConstraintsOptionsExtension Clone() => new(this);
+
+    public virtual bool AreEnumCheckConstraintsEnabled => _enumCheckConstraintsEnabled;
+
+    public virtual bool AreDiscriminatorCheckConstraintsEnabled => _discriminatorCheckConstraintsEnabled;
+
+    [MemberNotNullWhen(true, nameof(_validationCheckConstraintsOptions))]
+    public virtual bool AreValidationCheckConstraintsEnabled => _validationCheckConstraintsOptions != null;
+
+    public virtual ValidationCheckConstraintOptions? ValidationCheckConstraintOptions => _validationCheckConstraintsOptions;
+
+    public virtual CheckConstraintsOptionsExtension WithEnumCheckConstraintsEnabled(
+        bool enumCheckConstraintsEnabled)
+    {
+        var clone = Clone();
+        clone._enumCheckConstraintsEnabled = enumCheckConstraintsEnabled;
+        return clone;
+    }
+
+    public virtual CheckConstraintsOptionsExtension WithDiscriminatorCheckConstraintsEnabled(
+        bool discriminatorCheckConstraintsEnabled)
+    {
+        var clone = Clone();
+        clone._discriminatorCheckConstraintsEnabled = discriminatorCheckConstraintsEnabled;
+        return clone;
+    }
+
+    public virtual CheckConstraintsOptionsExtension WithValidationCheckConstraintsOptions(
+        ValidationCheckConstraintOptions validationCheckConstraintsOptions)
+    {
+        var clone = Clone();
+        clone._validationCheckConstraintsOptions = validationCheckConstraintsOptions;
+        return clone;
+    }
+
+    public void Validate(IDbContextOptions options) {}
+
+    public void ApplyServices(IServiceCollection services)
+        => services.AddEntityFrameworkCheckConstraints();
+
+    internal sealed class ExtensionInfo : DbContextOptionsExtensionInfo
+    {
+        private string? _logFragment;
+
+        public ExtensionInfo(IDbContextOptionsExtension extension) : base(extension) {}
+
+        private new CheckConstraintsOptionsExtension Extension
+            => (CheckConstraintsOptionsExtension)base.Extension;
+
+        public override bool IsDatabaseProvider => false;
+
+        public override string LogFragment
         {
-            _enumCheckConstraintsEnabled = copyFrom._enumCheckConstraintsEnabled;
-            _discriminatorCheckConstraintsEnabled = copyFrom._discriminatorCheckConstraintsEnabled;
-            _validationCheckConstraintsOptions = copyFrom._validationCheckConstraintsOptions is null
-                ? null
-                : new ValidationCheckConstraintOptions(copyFrom._validationCheckConstraintsOptions);
-        }
-
-        public virtual DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
-
-        protected virtual CheckConstraintsOptionsExtension Clone() => new(this);
-
-        public virtual bool AreEnumCheckConstraintsEnabled => _enumCheckConstraintsEnabled;
-
-        public virtual bool AreDiscriminatorCheckConstraintsEnabled => _discriminatorCheckConstraintsEnabled;
-
-        [MemberNotNullWhen(true, nameof(_validationCheckConstraintsOptions))]
-        public virtual bool AreValidationCheckConstraintsEnabled => _validationCheckConstraintsOptions != null;
-
-        public virtual ValidationCheckConstraintOptions? ValidationCheckConstraintOptions => _validationCheckConstraintsOptions;
-
-        public virtual CheckConstraintsOptionsExtension WithEnumCheckConstraintsEnabled(
-            bool enumCheckConstraintsEnabled)
-        {
-            var clone = Clone();
-            clone._enumCheckConstraintsEnabled = enumCheckConstraintsEnabled;
-            return clone;
-        }
-
-        public virtual CheckConstraintsOptionsExtension WithDiscriminatorCheckConstraintsEnabled(
-            bool discriminatorCheckConstraintsEnabled)
-        {
-            var clone = Clone();
-            clone._discriminatorCheckConstraintsEnabled = discriminatorCheckConstraintsEnabled;
-            return clone;
-        }
-
-        public virtual CheckConstraintsOptionsExtension WithValidationCheckConstraintsOptions(
-            ValidationCheckConstraintOptions validationCheckConstraintsOptions)
-        {
-            var clone = Clone();
-            clone._validationCheckConstraintsOptions = validationCheckConstraintsOptions;
-            return clone;
-        }
-
-        public void Validate(IDbContextOptions options) {}
-
-        public void ApplyServices(IServiceCollection services)
-            => services.AddEntityFrameworkCheckConstraints();
-
-        internal sealed class ExtensionInfo : DbContextOptionsExtensionInfo
-        {
-            private string? _logFragment;
-
-            public ExtensionInfo(IDbContextOptionsExtension extension) : base(extension) {}
-
-            private new CheckConstraintsOptionsExtension Extension
-                => (CheckConstraintsOptionsExtension)base.Extension;
-
-            public override bool IsDatabaseProvider => false;
-
-            public override string LogFragment
+            get
             {
-                get
+                if (_logFragment is null)
                 {
-                    if (_logFragment is null)
+                    var builder = new StringBuilder("using check constraints (");
+                    var isFirst = true;
+
+                    if (Extension.AreEnumCheckConstraintsEnabled)
                     {
-                        var builder = new StringBuilder("using check constraints (");
-                        var isFirst = true;
-
-                        if (Extension.AreEnumCheckConstraintsEnabled)
-                        {
-                            builder.Append("enums");
-                            isFirst = false;
-                        }
-
-                        if (Extension.AreDiscriminatorCheckConstraintsEnabled)
-                        {
-                            if (!isFirst)
-                            {
-                                builder.Append(", ");
-                            }
-
-                            builder.Append("discriminators");
-                            isFirst = false;
-                        }
-
-                        if (Extension.AreValidationCheckConstraintsEnabled)
-                        {
-                            if (!isFirst)
-                            {
-                                builder.Append(", ");
-                            }
-
-                            builder.Append("validation");
-                        }
-
-                        builder.Append(')');
-
-                        _logFragment = builder.ToString();
+                        builder.Append("enums");
+                        isFirst = false;
                     }
 
-                    return _logFragment;
+                    if (Extension.AreDiscriminatorCheckConstraintsEnabled)
+                    {
+                        if (!isFirst)
+                        {
+                            builder.Append(", ");
+                        }
+
+                        builder.Append("discriminators");
+                        isFirst = false;
+                    }
+
+                    if (Extension.AreValidationCheckConstraintsEnabled)
+                    {
+                        if (!isFirst)
+                        {
+                            builder.Append(", ");
+                        }
+
+                        builder.Append("validation");
+                    }
+
+                    builder.Append(')');
+
+                    _logFragment = builder.ToString();
                 }
+
+                return _logFragment;
             }
+        }
 
-            /// <inheritdoc />
-            public override int GetServiceProviderHashCode()
-                => HashCode.Combine(
-                    Extension._enumCheckConstraintsEnabled.GetHashCode(),
-                    Extension._discriminatorCheckConstraintsEnabled.GetHashCode(),
-                    Extension.ValidationCheckConstraintOptions?.GetHashCode());
+        /// <inheritdoc />
+        public override int GetServiceProviderHashCode()
+            => HashCode.Combine(
+                Extension._enumCheckConstraintsEnabled.GetHashCode(),
+                Extension._discriminatorCheckConstraintsEnabled.GetHashCode(),
+                Extension.ValidationCheckConstraintOptions?.GetHashCode());
 
-            /// <inheritdoc />
-            public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
-                => other is ExtensionInfo;
+        /// <inheritdoc />
+        public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
+            => other is ExtensionInfo;
 
-            /// <inheritdoc />
-            public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
+        /// <inheritdoc />
+        public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
+        {
+            debugInfo["CheckConstraints:Enums"]
+                = Extension._enumCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
+            debugInfo["CheckConstraints:Discriminators"]
+                = Extension._discriminatorCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
+
+            if (Extension._validationCheckConstraintsOptions is not null)
             {
-                debugInfo["CheckConstraints:Enums"]
-                    = Extension._enumCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
-                debugInfo["CheckConstraints:Discriminators"]
-                    = Extension._discriminatorCheckConstraintsEnabled.GetHashCode().ToString(CultureInfo.InvariantCulture);
-
-                if (Extension._validationCheckConstraintsOptions is not null)
-                {
-                    debugInfo["CheckConstraints:Validation"]
-                        = Extension._validationCheckConstraintsOptions.GetHashCode().ToString(CultureInfo.InvariantCulture);
-                }
+                debugInfo["CheckConstraints:Validation"]
+                    = Extension._validationCheckConstraintsOptions.GetHashCode().ToString(CultureInfo.InvariantCulture);
             }
         }
     }

@@ -3,43 +3,42 @@
 
 using System;
 
-namespace EFCore.CheckConstraints.Internal
+namespace EFCore.CheckConstraints.Internal;
+
+public class ValidationCheckConstraintOptions : IEquatable<ValidationCheckConstraintOptions>
 {
-    public class ValidationCheckConstraintOptions : IEquatable<ValidationCheckConstraintOptions>
+    public ValidationCheckConstraintOptions() {}
+
+    public ValidationCheckConstraintOptions(ValidationCheckConstraintOptions copyFrom)
     {
-        public ValidationCheckConstraintOptions() {}
-
-        public ValidationCheckConstraintOptions(ValidationCheckConstraintOptions copyFrom)
-        {
-            UseRegex = copyFrom.UseRegex;
-            PhoneRegex = copyFrom.PhoneRegex;
-            CreditCardRegex = copyFrom.CreditCardRegex;
-            EmailAddressRegex = copyFrom.EmailAddressRegex;
-            UrlRegex = copyFrom.UrlRegex;
-        }
-
-        public bool UseRegex { get; set; } = true;
-
-        public string? PhoneRegex { get; set; }
-
-        public string? CreditCardRegex { get; set; }
-
-        public string? EmailAddressRegex { get; set; }
-
-        public string? UrlRegex { get; set; }
-
-        public override bool Equals(object? obj)
-            => obj is ValidationCheckConstraintOptions other && Equals(other);
-
-        public bool Equals(ValidationCheckConstraintOptions? other)
-            => other is not null
-                && UseRegex == other.UseRegex
-                && PhoneRegex == other.PhoneRegex
-                && CreditCardRegex == other.CreditCardRegex
-                && EmailAddressRegex == other.EmailAddressRegex
-                && UrlRegex == other.UrlRegex;
-
-        public override int GetHashCode()
-            => HashCode.Combine(UseRegex, PhoneRegex, CreditCardRegex, EmailAddressRegex, UrlRegex);
+        UseRegex = copyFrom.UseRegex;
+        PhoneRegex = copyFrom.PhoneRegex;
+        CreditCardRegex = copyFrom.CreditCardRegex;
+        EmailAddressRegex = copyFrom.EmailAddressRegex;
+        UrlRegex = copyFrom.UrlRegex;
     }
+
+    public bool UseRegex { get; set; } = true;
+
+    public string? PhoneRegex { get; set; }
+
+    public string? CreditCardRegex { get; set; }
+
+    public string? EmailAddressRegex { get; set; }
+
+    public string? UrlRegex { get; set; }
+
+    public override bool Equals(object? obj)
+        => obj is ValidationCheckConstraintOptions other && Equals(other);
+
+    public bool Equals(ValidationCheckConstraintOptions? other)
+        => other is not null
+            && UseRegex == other.UseRegex
+            && PhoneRegex == other.PhoneRegex
+            && CreditCardRegex == other.CreditCardRegex
+            && EmailAddressRegex == other.EmailAddressRegex
+            && UrlRegex == other.UrlRegex;
+
+    public override int GetHashCode()
+        => HashCode.Combine(UseRegex, PhoneRegex, CreditCardRegex, EmailAddressRegex, UrlRegex);
 }

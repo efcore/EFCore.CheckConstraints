@@ -7,67 +7,66 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace EFCore.CheckConstraints.Internal
+namespace EFCore.CheckConstraints.Internal;
+
+public class EnumCheckConstraintConvention : IModelFinalizingConvention
 {
-    public class EnumCheckConstraintConvention : IModelFinalizingConvention
+    private readonly IRelationalTypeMappingSource _typeMappingSource;
+    private readonly ISqlGenerationHelper _sqlGenerationHelper;
+
+    public EnumCheckConstraintConvention(
+        IRelationalTypeMappingSource typeMappingSource,
+        ISqlGenerationHelper sqlGenerationHelper)
     {
-        private readonly IRelationalTypeMappingSource _typeMappingSource;
-        private readonly ISqlGenerationHelper _sqlGenerationHelper;
+        _typeMappingSource = typeMappingSource;
+        _sqlGenerationHelper = sqlGenerationHelper;
+    }
 
-        public EnumCheckConstraintConvention(
-            IRelationalTypeMappingSource typeMappingSource,
-            ISqlGenerationHelper sqlGenerationHelper)
+    public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
+    {
+        var sql = new StringBuilder();
+
+        foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
         {
-            _typeMappingSource = typeMappingSource;
-            _sqlGenerationHelper = sqlGenerationHelper;
-        }
-
-        public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
-        {
-            var sql = new StringBuilder();
-
-            foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
+            var tableName = entityType.GetTableName();
+            if (tableName is null)
             {
-                var tableName = entityType.GetTableName();
-                if (tableName is null)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                var tableIdentifier = StoreObjectIdentifier.Table(tableName, entityType.GetSchema());
+            var tableIdentifier = StoreObjectIdentifier.Table(tableName, entityType.GetSchema());
 
-                foreach (var property in entityType.GetDeclaredProperties())
+            foreach (var property in entityType.GetDeclaredProperties())
+            {
+                var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping()
+                    ?? _typeMappingSource.FindMapping((IProperty)property);
+                var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
+                if (propertyType.IsEnum
+                    && typeMapping != null
+                    && !propertyType.IsDefined(typeof(FlagsAttribute), true)
+                    && property.GetColumnName(tableIdentifier) is { } columnName)
                 {
-                    var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping()
-                        ?? _typeMappingSource.FindMapping((IProperty)property);
-                    var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
-                    if (propertyType.IsEnum
-                        && typeMapping != null
-                        && !propertyType.IsDefined(typeof(FlagsAttribute), true)
-                        && property.GetColumnName(tableIdentifier) is { } columnName)
+                    var enumValues = Enum.GetValues(propertyType);
+                    if (enumValues.Length <= 0)
                     {
-                        var enumValues = Enum.GetValues(propertyType);
-                        if (enumValues.Length <= 0)
-                        {
-                            continue;
-                        }
-
-                        sql.Clear();
-
-                        sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
-                        sql.Append(" IN (");
-                        foreach (var item in enumValues)
-                        {
-                            var value = typeMapping.GenerateSqlLiteral(item);
-                            sql.Append($"{value}, ");
-                        }
-
-                        sql.Remove(sql.Length - 2, 2);
-                        sql.Append(")");
-
-                        var constraintName = $"CK_{tableName}_{columnName}_Enum";
-                        entityType.AddCheckConstraint(constraintName, sql.ToString());
+                        continue;
                     }
+
+                    sql.Clear();
+
+                    sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
+                    sql.Append(" IN (");
+                    foreach (var item in enumValues)
+                    {
+                        var value = typeMapping.GenerateSqlLiteral(item);
+                        sql.Append($"{value}, ");
+                    }
+
+                    sql.Remove(sql.Length - 2, 2);
+                    sql.Append(")");
+
+                    var constraintName = $"CK_{tableName}_{columnName}_Enum";
+                    entityType.AddCheckConstraint(constraintName, sql.ToString());
                 }
             }
         }
