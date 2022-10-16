@@ -17,6 +17,6 @@ public class SqlServerTestHelpers : TestHelpers
     public override IServiceCollection AddProviderServices(IServiceCollection services)
         => services.AddEntityFrameworkSqlServer();
 
-    public override void UseProviderOptions(DbContextOptionsBuilder optionsBuilder)
+    public override DbContextOptionsBuilder UseProviderOptions(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(new SqlConnection("Database=DummyDatabase"));
 }
