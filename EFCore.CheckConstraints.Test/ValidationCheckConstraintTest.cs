@@ -51,7 +51,7 @@ public class ValidationCheckConstraintTest
     {
         var entityType = BuildEntityType<Blog>(useRegex: false);
 
-        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name.StartsWith("dbo.RegexMatch("));
+        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name!.StartsWith("dbo.RegexMatch("));
     }
 
     [Fact]
