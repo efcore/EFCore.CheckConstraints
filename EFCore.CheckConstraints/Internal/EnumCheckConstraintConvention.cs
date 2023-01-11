@@ -41,33 +41,35 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping()
                     ?? _typeMappingSource.FindMapping((IProperty)property);
                 var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
-                if (propertyType.IsEnum
-                    && typeMapping != null
-                    && !propertyType.IsDefined(typeof(FlagsAttribute), true)
-                    && property.GetColumnName(tableIdentifier) is { } columnName)
+                if (!propertyType.IsEnum
+                    || typeMapping == null
+                    || propertyType.IsDefined(typeof(FlagsAttribute), true)
+                    || property.GetColumnName(tableIdentifier) is not {} columnName)
                 {
-                    var enumValues = Enum.GetValues(propertyType);
-                    if (enumValues.Length <= 0)
-                    {
-                        continue;
-                    }
-
-                    sql.Clear();
-
-                    sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
-                    sql.Append(" IN (");
-                    foreach (var item in enumValues)
-                    {
-                        var value = typeMapping.GenerateSqlLiteral(item);
-                        sql.Append($"{value}, ");
-                    }
-
-                    sql.Remove(sql.Length - 2, 2);
-                    sql.Append(')');
-
-                    var constraintName = $"CK_{tableName}_{columnName}_Enum";
-                    entityType.AddCheckConstraint(constraintName, sql.ToString());
+                    continue;
                 }
+
+                var enumValues = Enum.GetValues(propertyType);
+                if (enumValues.Length == 0)
+                {
+                    continue;
+                }
+
+                sql.Clear();
+
+                sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
+                sql.Append(" IN (");
+                foreach (var item in enumValues)
+                {
+                    var value = typeMapping.GenerateSqlLiteral(item);
+                    sql.Append($"{value}, ");
+                }
+
+                sql.Remove(sql.Length - 2, 2);
+                sql.Append(')');
+
+                var constraintName = $"CK_{tableName}_{columnName}_Enum";
+                entityType.AddCheckConstraint(constraintName, sql.ToString());
             }
         }
     }
