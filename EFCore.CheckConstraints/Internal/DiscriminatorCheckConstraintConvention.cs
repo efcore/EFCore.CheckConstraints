@@ -58,7 +58,7 @@ public class DiscriminatorCheckConstraintConvention : IModelFinalizingConvention
             }
 
             sql.Remove(sql.Length - 2, 2);
-            sql.Append(")");
+            sql.Append(')');
 
             var constraintName = $"CK_{tableIdentifier.Name}_Discriminator";
             rootEntityType.AddCheckConstraint(constraintName, sql.ToString());

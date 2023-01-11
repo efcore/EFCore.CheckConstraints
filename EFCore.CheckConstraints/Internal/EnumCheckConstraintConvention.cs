@@ -63,7 +63,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     }
 
                     sql.Remove(sql.Length - 2, 2);
-                    sql.Append(")");
+                    sql.Append(')');
 
                     var constraintName = $"CK_{tableName}_{columnName}_Enum";
                     entityType.AddCheckConstraint(constraintName, sql.ToString());
