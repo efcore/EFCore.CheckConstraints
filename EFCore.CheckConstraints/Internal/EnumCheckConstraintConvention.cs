@@ -45,7 +45,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 if (!propertyType.IsEnum
                     || typeMapping == null
                     || propertyType.IsDefined(typeof(FlagsAttribute), true)
-                    || property.GetColumnName(tableIdentifier) is not {} columnName)
+                    || property.GetColumnName(tableIdentifier) is not { } columnName)
                 {
                     continue;
                 }
