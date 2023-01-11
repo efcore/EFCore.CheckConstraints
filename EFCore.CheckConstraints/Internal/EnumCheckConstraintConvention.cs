@@ -43,7 +43,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     ?? _typeMappingSource.FindMapping((IProperty)property);
                 var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                 if (!propertyType.IsEnum
-                    || typeMapping == null
+                    || typeMapping is null
                     || propertyType.IsDefined(typeof(FlagsAttribute), true)
                     || property.GetColumnName(tableIdentifier) is not { } columnName)
                 {
