@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -49,8 +50,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     continue;
                 }
 
-                var enumValues = Enum.GetValues(propertyType);
-                if (enumValues.Length == 0)
+                var enumValues = Enum.GetValues(propertyType).Cast<object>().Select(typeMapping.GenerateSqlLiteral).ToList();
+                if (enumValues.Count == 0)
                 {
                     continue;
                 }
@@ -58,15 +59,32 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 sql.Clear();
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
-                sql.Append(" IN (");
-                foreach (var item in enumValues)
-                {
-                    var value = typeMapping.GenerateSqlLiteral(item);
-                    sql.Append($"{value}, ");
-                }
 
-                sql.Remove(sql.Length - 2, 2);
-                sql.Append(')');
+                // the list is a contiguous range if the following are true
+                //  first value is int x
+                //  last value is int y
+                //  y - x is one less than the number of total values
+                if (int.TryParse(enumValues[0], out var firstValue)
+                    && int.TryParse(enumValues[^1], out var lastValue)
+                    && ((lastValue - firstValue) == enumValues.Count - 1))
+                {
+                    sql.Append(" BETWEEN ");
+                    sql.Append(firstValue);
+                    sql.Append(" AND ");
+                    sql.Append(lastValue);
+                }
+                else
+                {
+                    sql.Append(" IN (");
+                    foreach (var item in enumValues)
+                    {
+                        sql.Append(item);
+                        sql.Append(", ");
+                    }
+
+                    sql.Remove(sql.Length - 2, 2);
+                    sql.Append(')');
+                }
 
                 var constraintName = $"CK_{tableName}_{columnName}_Enum";
                 entityType.AddCheckConstraint(constraintName, sql.ToString());

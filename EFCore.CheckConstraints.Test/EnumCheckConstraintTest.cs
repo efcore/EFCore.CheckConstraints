@@ -27,7 +27,29 @@ public class EnumCheckConstraintConventionTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (0, 1)", checkConstraint.Sql);
+        Assert.Equal("[Type] BETWEEN 0 AND 1", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void Simple_NonContiguous()
+    {
+        var entityType = BuildEntityType(e => e.Property<NonContiguousCustomerType>("Type"));
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal("[Type] IN (0, 2)", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void Simple_Range()
+    {
+        var entityType = BuildEntityType(e => e.Property<CustomerTypeWithManyValues>("Type"));
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal("[Type] BETWEEN 12 AND 16", checkConstraint.Sql);
     }
 
     [Fact]
@@ -38,7 +60,7 @@ public class EnumCheckConstraintConventionTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (0, 1)", checkConstraint.Sql);
+        Assert.Equal("[Type] BETWEEN 0 AND 1", checkConstraint.Sql);
     }
 
     [Fact]
@@ -140,6 +162,21 @@ public class EnumCheckConstraintConventionTest
     {
         Standard = 0,
         Premium = 1
+    }
+
+    private enum NonContiguousCustomerType
+    {
+        Standard = 0,
+        Premium = 2
+    }
+
+    private enum CustomerTypeWithManyValues
+    {
+        Basic = 12,
+        Shared = 13,
+        Standard = 14,
+        Premium = 15,
+        Enterprise = 16
     }
 
     private enum EmptyEnum {}
