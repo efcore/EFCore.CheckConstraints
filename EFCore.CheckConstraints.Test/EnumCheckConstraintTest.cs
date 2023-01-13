@@ -19,10 +19,18 @@ namespace EFCore.CheckConstraints.Test;
 
 public class EnumCheckConstraintConventionTest
 {
-    [Fact]
-    public void Simple()
+    [Theory]
+    [InlineData(typeof(CustomerType))]
+    [InlineData(typeof(CustomerTypeLong))]
+    [InlineData(typeof(CustomerTypeULong))]
+    [InlineData(typeof(CustomerTypeUInt))]
+    [InlineData(typeof(CustomerTypeByte))]
+    [InlineData(typeof(CustomerTypeSByte))]
+    [InlineData(typeof(CustomerTypeShort))]
+    [InlineData(typeof(CustomerTypeUShort))]
+    public void Simple(Type enumType)
     {
-        var entityType = BuildEntityType(e => e.Property<CustomerType>("Type"));
+        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
@@ -158,7 +166,65 @@ public class EnumCheckConstraintConventionTest
 
     #region Support
 
-    private enum CustomerType
+    // ensure int is used explicitly
+    // ReSharper disable once EnumUnderlyingTypeIsInt
+    private enum CustomerType : int
+    {
+        Standard = 0,
+        Premium = 1
+    }
+    
+    private enum CustomerTypeUInt : uint
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeLong : long
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeULong : ulong
+    {
+        Standard = 0,
+        Premium = 1
+    }
+    
+    // `nint` and `nuint` cannot be used as an enum base type from C#:
+    // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-9.0/native-integers#miscellaneous
+    //private enum CustomerTypeNInt : nint
+    //{
+    //    Standard = (nint)0,
+    //    Premium = (nint)1
+    //}
+
+    //private enum CustomerTypeNUInt : nuint
+    //{
+    //    Standard = 0,
+    //    Premium = 1
+    //}
+    
+    private enum CustomerTypeByte : byte
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeSByte : sbyte
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeShort : short
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeUShort : ushort
     {
         Standard = 0,
         Premium = 1
