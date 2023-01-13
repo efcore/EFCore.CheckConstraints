@@ -44,7 +44,7 @@ public class EnumCheckConstraintConventionTest
     [Fact]
     public void Simple_Range()
     {
-        var entityType = BuildEntityType(e => e.Property<CustomerTypeWithManyValues>("Type"));
+        var entityType = BuildEntityType(e => e.Property<CustomerTypeStartingAfterZero>("Type"));
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
@@ -170,7 +170,7 @@ public class EnumCheckConstraintConventionTest
         Premium = 2
     }
 
-    private enum CustomerTypeWithManyValues
+    private enum CustomerTypeStartingAfterZero
     {
         Basic = 12,
         Shared = 13,
