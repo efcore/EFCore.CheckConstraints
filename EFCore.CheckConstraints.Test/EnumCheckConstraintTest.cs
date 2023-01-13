@@ -21,9 +21,9 @@ public class EnumCheckConstraintConventionTest
 {
     [Theory]
     [InlineData(typeof(CustomerType))]
+    [InlineData(typeof(CustomerTypeUInt))]
     [InlineData(typeof(CustomerTypeLong))]
     [InlineData(typeof(CustomerTypeULong))]
-    [InlineData(typeof(CustomerTypeUInt))]
     [InlineData(typeof(CustomerTypeByte))]
     [InlineData(typeof(CustomerTypeSByte))]
     [InlineData(typeof(CustomerTypeShort))]
