@@ -28,6 +28,7 @@ public class EnumCheckConstraintConventionTest
     [InlineData(typeof(CustomerTypeSByte))]
     [InlineData(typeof(CustomerTypeShort))]
     [InlineData(typeof(CustomerTypeUShort))]
+    [InlineData(typeof(CustomerTypeOutOfOrder))]
     public void Simple(Type enumType)
     {
         var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
@@ -243,6 +244,12 @@ public class EnumCheckConstraintConventionTest
         Standard = 14,
         Premium = 15,
         Enterprise = 16
+    }
+
+    private enum CustomerTypeOutOfOrder
+    {
+        Standard = 1,
+        Premium = 0
     }
 
     private enum EmptyEnum {}
