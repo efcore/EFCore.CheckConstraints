@@ -90,31 +90,30 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         }
     }
 
+    // we use decimal explicitly here because decimal is a wider number type than all of the valid enum backing types
     private bool TryParseMinAndMax(IReadOnlyCollection<string> enumValues, out decimal? minValue, out decimal? maxValue)
     {
-        var typeConverter = TypeDescriptor.GetConverter(typeof(decimal));
-
-        var parsedEnumValues = enumValues.Select(
+        var parsedEnumValues = enumValues.Select<string, decimal?>(
                 x =>
                 {
-                    if (typeConverter.IsValid(x))
+                    decimal? result = null;
+
+                    if (decimal.TryParse(x, out var parsed))
                     {
-                        return typeConverter.ConvertFromString(x);
+                        result = parsed;
+                    }
+                    else if (_decimalRegex.Match(x) is { Success: true } decimalMatch)
+                    {
+                        result = decimal.Parse(decimalMatch.Groups[1].Value);
+                    }
+                    else if (_castRegex.Match(x) is { Success: true } castMatch)
+                    {
+                        result = decimal.Parse(castMatch.Groups[1].Value);
                     }
 
-                    if (_decimalRegex.Match(x) is { Success: true } decimalMatch)
-                    {
-                        return typeConverter.ConvertFromString(decimalMatch.Groups[1].Value);
-                    }
-
-                    if (_castRegex.Match(x) is { Success: true } castMatch)
-                    {
-                        return typeConverter.ConvertFromString(castMatch.Groups[1].Value);
-                    }
-
-                    return null;
+                    //decimal.Truncate is necessary because `ulong`s will include a fractional part
+                    return result.HasValue ? decimal.Truncate(result.Value) : null;
                 })
-            .Cast<decimal?>()
             .ToList();
 
         if (parsedEnumValues.Any(x => x is null))
@@ -124,8 +123,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
             return false;
         }
 
-        minValue = decimal.Truncate(parsedEnumValues.Min()!.Value);
-        maxValue = decimal.Truncate(parsedEnumValues.Max()!.Value);
+        minValue = parsedEnumValues.Min();
+        maxValue = parsedEnumValues.Max();
 
         return maxValue - minValue == enumValues.Count - 1;
     }
