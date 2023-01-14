@@ -21,6 +21,7 @@ public class EnumCheckConstraintConventionTest
 {
     [Theory]
     [InlineData(typeof(CustomerType))]
+    [InlineData(typeof(CustomerType?))]
     [InlineData(typeof(CustomerTypeUInt))]
     [InlineData(typeof(CustomerTypeLong))]
     [InlineData(typeof(CustomerTypeULong))]
@@ -59,17 +60,6 @@ public class EnumCheckConstraintConventionTest
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
         Assert.Equal("[Type] BETWEEN 12 AND 16", checkConstraint.Sql);
-    }
-
-    [Fact]
-    public void Nullable()
-    {
-        var entityType = BuildEntityType(e => e.Property<CustomerType?>("Type"));
-
-        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
-        Assert.NotNull(checkConstraint);
-        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] BETWEEN 0 AND 1", checkConstraint.Sql);
     }
 
     [Fact]
