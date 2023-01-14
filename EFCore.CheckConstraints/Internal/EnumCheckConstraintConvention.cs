@@ -1,11 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EFCore.CheckConstraints.Internal;
@@ -14,6 +16,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 {
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
+    private readonly Regex _castRegex = new("CAST\\((\\d+) AS (?:tinyint|smallint|bigint)\\)", RegexOptions.Compiled | RegexOptions.Singleline);
+    private readonly Regex _decimalRegex = new("(\\d+).0", RegexOptions.Compiled | RegexOptions.Singleline);
 
     public EnumCheckConstraintConvention(
         IRelationalTypeMappingSource typeMappingSource,
@@ -60,18 +64,12 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
 
-                // the list is a contiguous range if the following are true
-                //  first value is int x
-                //  last value is int y
-                //  y - x is one less than the number of total values
-                if (int.TryParse(enumValues[0], out var firstValue)
-                    && int.TryParse(enumValues[^1], out var lastValue)
-                    && ((lastValue - firstValue) == enumValues.Count - 1))
+                if (TryParseMinAndMax(enumValues, out var minValue, out var maxValue))
                 {
                     sql.Append(" BETWEEN ");
-                    sql.Append(firstValue);
+                    sql.Append(minValue);
                     sql.Append(" AND ");
-                    sql.Append(lastValue);
+                    sql.Append(maxValue);
                 }
                 else
                 {
@@ -90,5 +88,45 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 entityType.AddCheckConstraint(constraintName, sql.ToString());
             }
         }
+    }
+
+    private bool TryParseMinAndMax(IReadOnlyCollection<string> enumValues, out decimal? minValue, out decimal? maxValue)
+    {
+        var typeConverter = TypeDescriptor.GetConverter(typeof(decimal));
+
+        var parsedEnumValues = enumValues.Select(
+                x =>
+                {
+                    if (typeConverter.IsValid(x))
+                    {
+                        return typeConverter.ConvertFromString(x);
+                    }
+
+                    if (_decimalRegex.Match(x) is { Success: true } decimalMatch)
+                    {
+                        return typeConverter.ConvertFromString(decimalMatch.Groups[1].Value);
+                    }
+
+                    if (_castRegex.Match(x) is { Success: true } castMatch)
+                    {
+                        return typeConverter.ConvertFromString(castMatch.Groups[1].Value);
+                    }
+
+                    return null;
+                })
+            .Cast<decimal?>()
+            .ToList();
+
+        if (parsedEnumValues.Any(x => x is null))
+        {
+            minValue = null;
+            maxValue = null;
+            return false;
+        }
+
+        minValue = decimal.Truncate(parsedEnumValues.Min()!.Value);
+        maxValue = decimal.Truncate(parsedEnumValues.Max()!.Value);
+
+        return maxValue - minValue == enumValues.Count - 1;
     }
 }
