@@ -171,18 +171,6 @@ public class EnumCheckConstraintConventionTest
         Premium = 1
     }
 
-    private enum CustomerTypeLong : long
-    {
-        Standard = 0,
-        Premium = 1
-    }
-
-    private enum CustomerTypeULong : ulong
-    {
-        Standard = 0,
-        Premium = 1
-    }
-
     // `nint` and `nuint` cannot be used as an enum base type from C#:
     // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-9.0/native-integers#miscellaneous
     //private enum CustomerTypeNInt : nint
@@ -196,6 +184,18 @@ public class EnumCheckConstraintConventionTest
     //    Standard = 0,
     //    Premium = 1
     //}
+
+    private enum CustomerTypeLong : long
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeULong : ulong
+    {
+        Standard = 0,
+        Premium = 1
+    }
 
     private enum CustomerTypeByte : byte
     {
