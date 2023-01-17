@@ -157,9 +157,7 @@ public class EnumCheckConstraintConventionTest
 
     #region Support
 
-    // ensure int is used explicitly
-    // ReSharper disable once EnumUnderlyingTypeIsInt
-    private enum CustomerType : int
+    private enum CustomerType
     {
         Standard = 0,
         Premium = 1
@@ -170,20 +168,6 @@ public class EnumCheckConstraintConventionTest
         Standard = 0,
         Premium = 1
     }
-
-    // `nint` and `nuint` cannot be used as an enum base type from C#:
-    // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-9.0/native-integers#miscellaneous
-    //private enum CustomerTypeNInt : nint
-    //{
-    //    Standard = (nint)0,
-    //    Premium = (nint)1
-    //}
-
-    //private enum CustomerTypeNUInt : nuint
-    //{
-    //    Standard = 0,
-    //    Premium = 1
-    //}
 
     private enum CustomerTypeLong : long
     {
