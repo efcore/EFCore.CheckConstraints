@@ -86,11 +86,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         }
     }
 
-    private static bool TryParseContiguousRange(
-        IEnumerable values,
-        CoreTypeMapping typeMapping,
-        out decimal minValue,
-        out decimal maxValue)
+    private static bool TryParseContiguousRange(IEnumerable values, CoreTypeMapping typeMapping, out decimal minValue, out decimal maxValue)
     {
         if (typeMapping.Converter?.ProviderClrType == typeof(string))
         {
@@ -100,6 +96,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
             return false;
         }
 
+        // we use decimal explicitly here because decimal is a wider number type than all of the valid enum backing types
         var enumValues = values.Cast<object>().Select(Convert.ToDecimal).ToList();
 
         minValue = enumValues.Min();
