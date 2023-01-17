@@ -62,20 +62,6 @@ public class EnumCheckConstraintConventionTest
         Assert.Equal("[Type] BETWEEN 12 AND 16", checkConstraint.Sql);
     }
 
-    [Fact(Skip = "not ready yet")]
-    public void Complex_Range()
-    {
-        var entityType = BuildEntityType(e => e.Property<CustomerTypeWithMultipleRanges>("Type"));
-
-        Assert.Equal(3, entityType.GetCheckConstraints().Count());
-
-        //Assert.Contains();
-
-        //Assert.NotNull(checkConstraint);
-        //Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        //Assert.Equal("[Type] BETWEEN 12 AND 16", checkConstraint.Sql);
-    }
-
     [Fact]
     public void Value_converter()
     {
@@ -248,16 +234,6 @@ public class EnumCheckConstraintConventionTest
         Standard = 14,
         Premium = 15,
         Enterprise = 16
-    }
-
-    private enum CustomerTypeWithMultipleRanges
-    {
-        Basic = 12,
-        Shared = 13,
-        Standard = 16,
-        Premium = 18,
-        Enterprise = 19,
-        Enterprise2 = 20
     }
 
     private enum CustomerTypeOutOfOrder
