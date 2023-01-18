@@ -126,9 +126,9 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
     }
 
     private static bool TryGetMinMax<T>(IEnumerable values, out T minValue, out T maxValue)
-        where T : IBinaryInteger<T>, new()
+        where T : INumber<T>, new()
     {
-        var enumValues = values.Cast<T>().ToList();
+        var enumValues = values.Cast<T>().Distinct().ToList();
 
         minValue = enumValues.Min()!;
         maxValue = enumValues.Max()!;

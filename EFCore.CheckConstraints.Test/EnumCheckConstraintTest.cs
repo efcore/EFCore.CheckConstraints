@@ -22,6 +22,7 @@ public class EnumCheckConstraintConventionTest
     [Theory]
     [InlineData(typeof(CustomerType))]
     [InlineData(typeof(CustomerType?))]
+    [InlineData(typeof(CustomerTypeWithDuplicates))]
     [InlineData(typeof(CustomerTypeUInt))]
     [InlineData(typeof(CustomerTypeLong))]
     [InlineData(typeof(CustomerTypeULong))]
@@ -159,6 +160,13 @@ public class EnumCheckConstraintConventionTest
 
     private enum CustomerType
     {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeWithDuplicates
+    {
+        Basic = 0,
         Standard = 0,
         Premium = 1
     }
