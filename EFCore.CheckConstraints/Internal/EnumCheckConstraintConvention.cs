@@ -74,7 +74,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
 
-                if (TryParseContiguousRange(values, typeMapping, out var minValue, out var maxValue))
+                if (TryParseContiguousRange(typeMapping, values, out var minValue, out var maxValue))
                 {
                     sql.Append(" BETWEEN ");
                     sql.Append(minValue);
@@ -84,9 +84,9 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 else
                 {
                     sql.Append(" IN (");
-                    foreach (var item in values.Cast<object>().Select(typeMapping.GenerateSqlLiteral))
+                    foreach (var item in values)
                     {
-                        sql.Append(item);
+                        sql.Append(typeMapping.GenerateSqlLiteral(item));
                         sql.Append(", ");
                     }
 
@@ -100,7 +100,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         }
     }
 
-    private bool TryParseContiguousRange(IEnumerable values, CoreTypeMapping typeMapping, out decimal minValue, out decimal maxValue)
+    private bool TryParseContiguousRange(CoreTypeMapping typeMapping, IEnumerable values, out object minValue, out object maxValue)
     {
         if (typeMapping.Converter?.ProviderClrType is null || !_knownTypes.Contains(typeMapping.Converter.ProviderClrType))
         {
