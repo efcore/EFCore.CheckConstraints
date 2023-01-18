@@ -55,8 +55,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
             foreach (var property in entityType.GetDeclaredProperties())
             {
-                var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping() ??
-                    _typeMappingSource.FindMapping((IProperty)property);
+                var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping()
+                    ?? _typeMappingSource.FindMapping((IProperty)property);
                 var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                 if (!propertyType.IsEnum
                     || typeMapping is null
@@ -88,8 +88,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     sql.Append(" IN (");
                     foreach (var item in values)
                     {
-                        sql.Append(typeMapping.GenerateSqlLiteral(item));
-                        sql.Append(", ");
+                        var value = typeMapping.GenerateSqlLiteral(item);
+                        sql.Append($"{value}, ");
                     }
 
                     sql.Remove(sql.Length - 2, 2);
