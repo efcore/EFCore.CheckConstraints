@@ -17,26 +17,27 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 {
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
+    private readonly IReadOnlyDictionary<Type, MethodInfo> _supportedEnumValueTypes;
 
-    private readonly List<Type> _knownTypes = new()
-    {
-        typeof(int),
-        typeof(uint),
-        typeof(long),
-        typeof(ulong),
-        typeof(byte),
-        typeof(sbyte),
-        typeof(short),
-        typeof(ushort),
-        typeof(decimal)
-    };
-
-    public EnumCheckConstraintConvention(
-        IRelationalTypeMappingSource typeMappingSource,
-        ISqlGenerationHelper sqlGenerationHelper)
+    public EnumCheckConstraintConvention(IRelationalTypeMappingSource typeMappingSource, ISqlGenerationHelper sqlGenerationHelper)
     {
         _typeMappingSource = typeMappingSource;
         _sqlGenerationHelper = sqlGenerationHelper;
+
+        var method = GetType().GetTypeInfo().GetDeclaredMethod(nameof(TryGetMinMax))!;
+
+        _supportedEnumValueTypes = new Dictionary<Type, MethodInfo>
+        {
+            { typeof(int), method.MakeGenericMethod(typeof(int)) },
+            { typeof(uint), method.MakeGenericMethod(typeof(uint)) },
+            { typeof(long), method.MakeGenericMethod(typeof(long)) },
+            { typeof(ulong), method.MakeGenericMethod(typeof(ulong)) },
+            { typeof(byte), method.MakeGenericMethod(typeof(byte)) },
+            { typeof(sbyte), method.MakeGenericMethod(typeof(sbyte)) },
+            { typeof(short), method.MakeGenericMethod(typeof(short)) },
+            { typeof(ushort), method.MakeGenericMethod(typeof(ushort)) },
+            { typeof(decimal), method.MakeGenericMethod(typeof(decimal)) },
+        }.AsReadOnly();
     }
 
     public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
@@ -55,8 +56,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
             foreach (var property in entityType.GetDeclaredProperties())
             {
-                var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping()
-                    ?? _typeMappingSource.FindMapping((IProperty)property);
+                var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping() ?? _typeMappingSource.FindMapping((IProperty)property);
                 var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                 if (!propertyType.IsEnum
                     || typeMapping is null
@@ -104,20 +104,18 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
     private bool TryParseContiguousRange(CoreTypeMapping typeMapping, IEnumerable values, out object? minValue, out object? maxValue)
     {
-        minValue = default;
-        maxValue = default;
-
-        if (typeMapping.Converter?.ProviderClrType is null || !_knownTypes.Contains(typeMapping.Converter.ProviderClrType))
+        if (typeMapping.Converter?.ProviderClrType is null || !_supportedEnumValueTypes.ContainsKey(typeMapping.Converter.ProviderClrType))
         {
+            minValue = default;
+            maxValue = default;
             return false;
         }
 
         var underlyingType = Enum.GetUnderlyingType(typeMapping.ClrType);
 
-        var parameters = new[] { values, minValue, maxValue };
+        var parameters = new object?[] { values, null, null };
 
-        var success = GetType().GetTypeInfo().GetDeclaredMethod(nameof(TryGetMinMax))!.MakeGenericMethod(underlyingType)
-            .Invoke(null, parameters)!;
+        var success = _supportedEnumValueTypes[underlyingType].Invoke(null, parameters)!;
 
         minValue = parameters[1];
         maxValue = parameters[2];
