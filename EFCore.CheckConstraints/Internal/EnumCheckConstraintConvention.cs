@@ -115,12 +115,12 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
         var parameters = new object?[] { values, null, null };
 
-        var success = _supportedEnumValueTypes[underlyingType].Invoke(null, parameters)!;
+        var success = (bool)_supportedEnumValueTypes[underlyingType].Invoke(null, parameters)!;
 
-        minValue = parameters[1];
-        maxValue = parameters[2];
+        minValue = success ? parameters[1] : default;
+        maxValue = success ? parameters[2] : default;
 
-        return (bool)success;
+        return success;
     }
 
     private static bool TryGetMinMax<T>(IEnumerable values, out T minValue, out T maxValue)
