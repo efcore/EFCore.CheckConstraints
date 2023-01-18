@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EFCore.CheckConstraints.Internal;
 
@@ -76,7 +77,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
 
-                if (TryParseContiguousRange(typeMapping, values, out var minValue, out var maxValue))
+                if (TryParseContiguousRange(typeMapping.Converter, values, out var minValue, out var maxValue))
                 {
                     sql.Append(" BETWEEN ");
                     sql.Append(minValue);
@@ -102,16 +103,16 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         }
     }
 
-    private bool TryParseContiguousRange(CoreTypeMapping typeMapping, IEnumerable values, out object? minValue, out object? maxValue)
+    private bool TryParseContiguousRange(ValueConverter? converter, IEnumerable values, out object? minValue, out object? maxValue)
     {
-        if (typeMapping.Converter?.ProviderClrType is null || !_supportedEnumValueTypes.ContainsKey(typeMapping.Converter.ProviderClrType))
+        if (converter?.ProviderClrType is null || !_supportedEnumValueTypes.ContainsKey(converter.ProviderClrType))
         {
             minValue = default;
             maxValue = default;
             return false;
         }
 
-        var underlyingType = Enum.GetUnderlyingType(typeMapping.ClrType);
+        var underlyingType = Enum.GetUnderlyingType(converter.ModelClrType);
 
         var parameters = new object?[] { values, null, null };
 
