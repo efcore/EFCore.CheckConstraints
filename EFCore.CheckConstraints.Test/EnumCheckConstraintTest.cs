@@ -53,6 +53,17 @@ public class EnumCheckConstraintConventionTest
     }
 
     [Fact]
+    public void Simple_NegativeValues()
+    {
+        var entityType = BuildEntityType(e => e.Property<CustomerTypeNegative>("Type"));
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal("[Type] BETWEEN -2 AND -1", checkConstraint.Sql);
+    }
+
+    [Fact]
     public void Simple_Range()
     {
         var entityType = BuildEntityType(e => e.Property<CustomerTypeStartingAfterZero>("Type"));
@@ -162,6 +173,12 @@ public class EnumCheckConstraintConventionTest
     {
         Standard = 0,
         Premium = 1
+    }
+
+    private enum CustomerTypeNegative
+    {
+        Standard = -1,
+        Premium = -2
     }
 
     private enum CustomerTypeWithDuplicates
