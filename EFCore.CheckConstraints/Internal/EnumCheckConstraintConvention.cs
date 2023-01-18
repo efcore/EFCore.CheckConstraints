@@ -1,3 +1,6 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -31,9 +34,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         typeof(decimal)
     };
 
-    public EnumCheckConstraintConvention(
-        IRelationalTypeMappingSource typeMappingSource,
-        ISqlGenerationHelper sqlGenerationHelper)
+    public EnumCheckConstraintConvention(IRelationalTypeMappingSource typeMappingSource, ISqlGenerationHelper sqlGenerationHelper)
     {
         _typeMappingSource = typeMappingSource;
         _sqlGenerationHelper = sqlGenerationHelper;
@@ -55,13 +56,12 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
             foreach (var property in entityType.GetDeclaredProperties())
             {
-                var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping()
-                    ?? _typeMappingSource.FindMapping((IProperty)property);
+                var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping() ?? _typeMappingSource.FindMapping((IProperty)property);
                 var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                 if (!propertyType.IsEnum
                     || typeMapping is null
                     || propertyType.IsDefined(typeof(FlagsAttribute), true)
-                    || property.GetColumnName(tableIdentifier) is not { } columnName)
+                    || property.GetColumnName(tableIdentifier) is not {} columnName)
                 {
                     continue;
                 }
@@ -136,6 +136,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
         var enumValuesCount = (T)Convert.ChangeType(enumValues.Count, typeof(T));
 
-        return (maxValue - minValue) == (enumValuesCount + T.One);
+        return (maxValue - minValue) == (enumValuesCount - T.One);
     }
 }
