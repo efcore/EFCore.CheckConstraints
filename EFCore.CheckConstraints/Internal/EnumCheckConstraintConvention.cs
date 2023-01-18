@@ -116,7 +116,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
         var parameters = new[] { values, minValue, maxValue };
 
-        // Use reflection to turn `TryGetMinMax` into a generic invocation using the underlying type of the num
         var success = GetType().GetTypeInfo().GetDeclaredMethod(nameof(TryGetMinMax))!.MakeGenericMethod(underlyingType)
             .Invoke(null, parameters)!;
 
