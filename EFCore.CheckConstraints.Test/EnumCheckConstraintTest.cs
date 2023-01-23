@@ -4,7 +4,6 @@ using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
@@ -19,26 +18,61 @@ namespace EFCore.CheckConstraints.Test;
 
 public class EnumCheckConstraintConventionTest
 {
-    [Fact]
-    public void Simple()
+    [Theory]
+    [InlineData(typeof(CustomerType))]
+    [InlineData(typeof(CustomerType?))]
+    [InlineData(typeof(CustomerTypeWithDuplicates))]
+    [InlineData(typeof(CustomerTypeUShort))]
+    [InlineData(typeof(CustomerTypeOutOfOrder))]
+    public void Simple(Type enumType)
     {
-        var entityType = BuildEntityType(e => e.Property<CustomerType>("Type"));
+        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (0, 1)", checkConstraint.Sql);
+        Assert.Equal("[Type] BETWEEN 0 AND 1", checkConstraint.Sql);
+    }
+
+    [Theory]
+    [InlineData(typeof(CustomerTypeLong), "bigint")]
+    [InlineData(typeof(CustomerTypeUInt), "bigint")]
+    [InlineData(typeof(CustomerTypeByte), "tinyint")]
+    [InlineData(typeof(CustomerTypeSByte), "smallint")]
+    [InlineData(typeof(CustomerTypeShort), "smallint")]
+    public void Simple_WithCast(Type enumType, string destinationType)
+    {
+        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal($"[Type] BETWEEN CAST(0 AS {destinationType}) AND CAST(1 AS {destinationType})", checkConstraint.Sql);
     }
 
     [Fact]
-    public void Nullable()
+    public void Simple_NonContiguous()
     {
-        var entityType = BuildEntityType(e => e.Property<CustomerType?>("Type"));
+        var entityType = BuildEntityType(e => e.Property<NonContiguousCustomerType>("Type"));
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (0, 1)", checkConstraint.Sql);
+        Assert.Equal("[Type] IN (0, 2)", checkConstraint.Sql);
+    }
+
+    [Theory]
+    [InlineData(typeof(CustomerTypeNegative), "-2", "-1")]
+    [InlineData(typeof(CustomerTypeStartingAfterZero), "12", "16")]
+    [InlineData(typeof(CustomerTypeULong), "0.0", "1.0")]
+    public void Simple_Range(Type enumType, string minValue, string maxValue)
+    {
+        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal($"[Type] BETWEEN {minValue} AND {maxValue}", checkConstraint.Sql);
     }
 
     [Fact]
@@ -140,6 +174,82 @@ public class EnumCheckConstraintConventionTest
     {
         Standard = 0,
         Premium = 1
+    }
+
+    private enum CustomerTypeNegative
+    {
+        Standard = -1,
+        Premium = -2
+    }
+
+    private enum CustomerTypeWithDuplicates
+    {
+        Basic = 0,
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeUInt : uint
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeLong : long
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeULong : ulong
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeByte : byte
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeSByte : sbyte
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeShort : short
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum CustomerTypeUShort : ushort
+    {
+        Standard = 0,
+        Premium = 1
+    }
+
+    private enum NonContiguousCustomerType
+    {
+        Standard = 0,
+        Premium = 2
+    }
+
+    private enum CustomerTypeStartingAfterZero
+    {
+        Basic = 12,
+        Shared = 13,
+        Standard = 14,
+        Premium = 15,
+        Enterprise = 16
+    }
+
+    private enum CustomerTypeOutOfOrder
+    {
+        Standard = 1,
+        Premium = 0
     }
 
     private enum EmptyEnum {}
