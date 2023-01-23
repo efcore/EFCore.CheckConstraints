@@ -18,27 +18,16 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 {
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
-    private readonly IReadOnlyDictionary<Type, MethodInfo> _supportedEnumValueTypes;
+    private readonly MethodInfo _tryGetMinMaxMethodInfo;
+    private readonly Type _iNumberType = typeof(INumber<>);
+    private readonly Dictionary<Type, MethodInfo> _cachedTryGetMinMaxMethodInfos;
 
     public EnumCheckConstraintConvention(IRelationalTypeMappingSource typeMappingSource, ISqlGenerationHelper sqlGenerationHelper)
     {
         _typeMappingSource = typeMappingSource;
         _sqlGenerationHelper = sqlGenerationHelper;
-
-        var method = GetType().GetTypeInfo().GetDeclaredMethod(nameof(TryGetMinMax))!;
-
-        _supportedEnumValueTypes = new Dictionary<Type, MethodInfo>
-        {
-            { typeof(int), method.MakeGenericMethod(typeof(int)) },
-            { typeof(uint), method.MakeGenericMethod(typeof(uint)) },
-            { typeof(long), method.MakeGenericMethod(typeof(long)) },
-            { typeof(ulong), method.MakeGenericMethod(typeof(ulong)) },
-            { typeof(byte), method.MakeGenericMethod(typeof(byte)) },
-            { typeof(sbyte), method.MakeGenericMethod(typeof(sbyte)) },
-            { typeof(short), method.MakeGenericMethod(typeof(short)) },
-            { typeof(ushort), method.MakeGenericMethod(typeof(ushort)) },
-            { typeof(decimal), method.MakeGenericMethod(typeof(decimal)) },
-        }.AsReadOnly();
+        _cachedTryGetMinMaxMethodInfos = new Dictionary<Type, MethodInfo>();
+        _tryGetMinMaxMethodInfo = GetType().GetTypeInfo().GetDeclaredMethod(nameof(TryGetMinMax))!;
     }
 
     public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
@@ -105,7 +94,9 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
     private bool TryParseContiguousRange(ValueConverter? converter, IEnumerable values, out object? minValue, out object? maxValue)
     {
-        if (converter?.ProviderClrType is null || !_supportedEnumValueTypes.ContainsKey(converter.ProviderClrType))
+        // if the database destination type is not a type that implements INumber<>, we cannot 
+        if (converter?.ProviderClrType.GetInterfaces()
+                .Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == _iNumberType) is not true)
         {
             minValue = default;
             maxValue = default;
@@ -116,12 +107,25 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
         var parameters = new object?[] { values, null, null };
 
-        var success = (bool)_supportedEnumValueTypes[underlyingType].Invoke(null, parameters)!;
+        var success = (bool)GetGenericTryGetMinMax(underlyingType).Invoke(null, parameters)!;
 
         minValue = success ? parameters[1] : default;
         maxValue = success ? parameters[2] : default;
 
         return success;
+    }
+
+    private MethodInfo GetGenericTryGetMinMax(Type underlyingType)
+    {
+        // ReSharper disable once InvertIf
+        if (!_cachedTryGetMinMaxMethodInfos.TryGetValue(underlyingType, out var methodInfo))
+        {
+            methodInfo = _tryGetMinMaxMethodInfo.MakeGenericMethod(underlyingType);
+
+            _cachedTryGetMinMaxMethodInfos.Add(underlyingType, methodInfo);
+        }
+
+        return methodInfo;
     }
 
     private static bool TryGetMinMax<T>(IEnumerable values, out T minValue, out T maxValue)
