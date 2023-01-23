@@ -80,9 +80,9 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 if (TryParseContiguousRange(typeMapping.Converter, values, out var minValue, out var maxValue))
                 {
                     sql.Append(" BETWEEN ");
-                    sql.Append(minValue);
+                    sql.Append(typeMapping.GenerateSqlLiteral(minValue));
                     sql.Append(" AND ");
-                    sql.Append(maxValue);
+                    sql.Append(typeMapping.GenerateSqlLiteral(maxValue));
                 }
                 else
                 {
