@@ -19,53 +19,20 @@ namespace EFCore.CheckConstraints.Test;
 public class EnumCheckConstraintConventionTest
 {
     [Theory]
-    [InlineData(typeof(CustomerType))]
-    [InlineData(typeof(CustomerType?))]
-    [InlineData(typeof(CustomerTypeWithDuplicates))]
-    [InlineData(typeof(CustomerTypeUShort))]
-    [InlineData(typeof(CustomerTypeOutOfOrder))]
-    public void Simple(Type enumType)
-    {
-        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
-
-        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
-        Assert.NotNull(checkConstraint);
-        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] BETWEEN 0 AND 1", checkConstraint.Sql);
-    }
-
-    [Theory]
-    [InlineData(typeof(CustomerTypeLong), "bigint")]
-    [InlineData(typeof(CustomerTypeUInt), "bigint")]
-    [InlineData(typeof(CustomerTypeByte), "tinyint")]
-    [InlineData(typeof(CustomerTypeSByte), "smallint")]
-    [InlineData(typeof(CustomerTypeShort), "smallint")]
-    public void Simple_WithCast(Type enumType, string destinationType)
-    {
-        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
-
-        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
-        Assert.NotNull(checkConstraint);
-        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal($"[Type] BETWEEN CAST(0 AS {destinationType}) AND CAST(1 AS {destinationType})", checkConstraint.Sql);
-    }
-
-    [Fact]
-    public void Simple_NonContiguous()
-    {
-        var entityType = BuildEntityType(e => e.Property<NonContiguousCustomerType>("Type"));
-
-        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
-        Assert.NotNull(checkConstraint);
-        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (0, 2)", checkConstraint.Sql);
-    }
-
-    [Theory]
-    [InlineData(typeof(CustomerTypeNegative), "-2", "-1")]
-    [InlineData(typeof(CustomerTypeStartingAfterZero), "12", "16")]
-    [InlineData(typeof(CustomerTypeULong), "0.0", "1.0")]
-    public void Simple_Range(Type enumType, string minValue, string maxValue)
+    [InlineData(typeof(ContiguousEnum), "0", "1")]
+    [InlineData(typeof(ContiguousUIntEnum), "CAST(0 AS bigint)", "CAST(1 AS bigint)")]
+    [InlineData(typeof(ContiguousLongEnum), "CAST(0 AS bigint)", "CAST(1 AS bigint)")]
+    [InlineData(typeof(ContiguousULongEnum), "0.0", "1.0")]
+    [InlineData(typeof(ContiguousShortEnum), "CAST(0 AS smallint)", "CAST(1 AS smallint)")]
+    [InlineData(typeof(ContiguousUShortEnum), "0", "1")]
+    [InlineData(typeof(ContiguousByteEnum), "CAST(0 AS tinyint)", "CAST(1 AS tinyint)")]
+    [InlineData(typeof(ContiguousSByteEnum), "CAST(0 AS smallint)", "CAST(1 AS smallint)")]
+    [InlineData(typeof(ContiguousEnum?), "0", "1")]
+    [InlineData(typeof(ContiguousNegativeEnum), "-2", "-1")]
+    [InlineData(typeof(ContiguousWithDuplicatesEnum), "0", "1")]
+    [InlineData(typeof(ContiguousStartingAfterZeroEnum), "12", "16")]
+    [InlineData(typeof(ContiguousOutOfOrderEnum), "0", "1")]
+    public void Contiguous_enums(Type enumType, string minValue, string maxValue)
     {
         var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
 
@@ -76,14 +43,25 @@ public class EnumCheckConstraintConventionTest
     }
 
     [Fact]
-    public void Value_converter()
+    public void Non_contiguous()
     {
-        var entityType = BuildEntityType(e => e.Property<CustomerType>("Type").HasConversion<string>());
+        var entityType = BuildEntityType(e => e.Property<NonContiguousEnum>("Type"));
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (N'Standard', N'Premium')", checkConstraint.Sql);
+        Assert.Equal("[Type] IN (0, 2)", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void Contiguous_but_with_value_conversion_to_string()
+    {
+        var entityType = BuildEntityType(e => e.Property<ContiguousEnum>("Type").HasConversion<string>());
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal("[Type] IN (N'A', N'B')", checkConstraint.Sql);
     }
 
     [Fact]
@@ -108,7 +86,7 @@ public class EnumCheckConstraintConventionTest
         var entityType = BuildEntityType(e =>
         {
             e.ToView("CustomerView");
-            e.Property<CustomerType>("Type");
+            e.Property<ContiguousEnum>("Type");
         });
 
         Assert.Empty(entityType.GetCheckConstraints());
@@ -122,12 +100,12 @@ public class EnumCheckConstraintConventionTest
             b.Entity("Customer", e =>
             {
                 e.Property<int>("Id");
-                e.Property<CustomerType>("Type");
+                e.Property<ContiguousEnum>("Type");
             });
             b.Entity("SpecialCustomer", e =>
             {
                 e.HasBaseType("Customer");
-                e.Property<CustomerType>("AnotherType");
+                e.Property<ContiguousEnum>("AnotherType");
             });
         });
 
@@ -148,13 +126,13 @@ public class EnumCheckConstraintConventionTest
             b.Entity("Customer", e =>
             {
                 e.Property<int>("Id");
-                e.Property<CustomerType>("Type");
+                e.Property<ContiguousEnum>("Type");
             });
             b.Entity("SpecialCustomer", e =>
             {
                 e.HasBaseType("Customer");
                 e.ToTable("SpecialCustomer");
-                e.Property<CustomerType>("AnotherType");
+                e.Property<ContiguousEnum>("AnotherType");
             });
         });
 
@@ -168,88 +146,88 @@ public class EnumCheckConstraintConventionTest
             ck => Assert.Equal("CK_SpecialCustomer_AnotherType_Enum", ck.Name));
     }
 
-    #region Support
+    #region Test enums
 
-    private enum CustomerType
+    private enum ContiguousEnum
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum CustomerTypeNegative
+    private enum ContiguousNegativeEnum
     {
-        Standard = -1,
-        Premium = -2
+        A = -1,
+        B = -2
     }
 
-    private enum CustomerTypeWithDuplicates
+    private enum ContiguousWithDuplicatesEnum
     {
-        Basic = 0,
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 0,
+        C = 1
     }
 
-    private enum CustomerTypeUInt : uint
+    private enum ContiguousUIntEnum : uint
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum CustomerTypeLong : long
+    private enum ContiguousLongEnum : long
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum CustomerTypeULong : ulong
+    private enum ContiguousULongEnum : ulong
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum CustomerTypeByte : byte
+    private enum ContiguousByteEnum : byte
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum CustomerTypeSByte : sbyte
+    private enum ContiguousSByteEnum : sbyte
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum CustomerTypeShort : short
+    private enum ContiguousShortEnum : short
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum CustomerTypeUShort : ushort
+    private enum ContiguousUShortEnum : ushort
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
 
-    private enum NonContiguousCustomerType
+    private enum ContiguousStartingAfterZeroEnum
     {
-        Standard = 0,
-        Premium = 2
+        A = 12,
+        B = 13,
+        C = 14,
+        D = 15,
+        E = 16
     }
 
-    private enum CustomerTypeStartingAfterZero
+    private enum ContiguousOutOfOrderEnum
     {
-        Basic = 12,
-        Shared = 13,
-        Standard = 14,
-        Premium = 15,
-        Enterprise = 16
+        B = 1,
+        A = 0
     }
 
-    private enum CustomerTypeOutOfOrder
+    private enum NonContiguousEnum
     {
-        Standard = 1,
-        Premium = 0
+        A = 0,
+        B = 2
     }
 
     private enum EmptyEnum {}
@@ -257,9 +235,13 @@ public class EnumCheckConstraintConventionTest
     [Flags]
     private enum FlagsEnum
     {
-        Standard = 0,
-        Premium = 1
+        A = 0,
+        B = 1
     }
+
+    #endregion Test enums
+
+    #region Support
 
     private IModel BuildModel(Action<ModelBuilder> buildAction)
     {

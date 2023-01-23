@@ -18,7 +18,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 {
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
-    private readonly MethodInfo _tryGetMinMaxMethodInfo;
     private readonly Type _iNumberType = typeof(INumber<>);
     private readonly Dictionary<Type, MethodInfo> _cachedTryGetMinMaxMethodInfos;
 
@@ -27,7 +26,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         _typeMappingSource = typeMappingSource;
         _sqlGenerationHelper = sqlGenerationHelper;
         _cachedTryGetMinMaxMethodInfos = new Dictionary<Type, MethodInfo>();
-        _tryGetMinMaxMethodInfo = GetType().GetTypeInfo().GetDeclaredMethod(nameof(TryGetMinMax))!;
     }
 
     public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
@@ -105,27 +103,24 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
         var parameters = new object?[] { values, null, null };
 
-        var success = (bool)GetGenericTryGetMinMax(converter.ModelClrType).Invoke(null, parameters)!;
+        var underlyingType = Enum.GetUnderlyingType(converter.ModelClrType);
+
+        // ReSharper disable once InvertIf
+        if (!_cachedTryGetMinMaxMethodInfos.TryGetValue(underlyingType, out var getMinMaxMethod))
+        {
+            getMinMaxMethod = typeof(EnumCheckConstraintConvention).GetTypeInfo()
+                .GetDeclaredMethod(nameof(TryGetMinMax))!
+                .MakeGenericMethod(underlyingType);
+
+            _cachedTryGetMinMaxMethodInfos.Add(underlyingType, getMinMaxMethod);
+        }
+
+        var success = (bool)getMinMaxMethod.Invoke(null, parameters)!;
 
         minValue = success ? parameters[1] : default;
         maxValue = success ? parameters[2] : default;
 
         return success;
-    }
-
-    private MethodInfo GetGenericTryGetMinMax(Type modelClrType)
-    {
-        var underlyingType = Enum.GetUnderlyingType(modelClrType);
-
-        // ReSharper disable once InvertIf
-        if (!_cachedTryGetMinMaxMethodInfos.TryGetValue(underlyingType, out var methodInfo))
-        {
-            methodInfo = _tryGetMinMaxMethodInfo.MakeGenericMethod(underlyingType);
-
-            _cachedTryGetMinMaxMethodInfos.Add(underlyingType, methodInfo);
-        }
-
-        return methodInfo;
     }
 
     private static bool TryGetMinMax<T>(IEnumerable values, out T minValue, out T maxValue)
