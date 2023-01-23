@@ -54,7 +54,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     continue;
                 }
 
-                var enumValues = Enum.GetValues(propertyType);
+                var enumValues = Enum.GetValuesAsUnderlyingType(propertyType).Cast<object>().Distinct().ToArray();
                 if (enumValues.Length == 0)
                 {
                     continue;
@@ -123,15 +123,15 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         return success;
     }
 
-    private static bool TryGetMinMax<T>(IEnumerable values, out T minValue, out T maxValue)
+    private static bool TryGetMinMax<T>(object[] values, out T minValue, out T maxValue)
         where T : INumber<T>
     {
-        var enumValues = values.Cast<T>().Distinct().ToList();
+        var enumValues = values.Cast<T>().ToArray();
 
         minValue = enumValues.Min()!;
         maxValue = enumValues.Max()!;
 
-        var enumValuesCount = (T)Convert.ChangeType(enumValues.Count, typeof(T));
+        var enumValuesCount = (T)Convert.ChangeType(enumValues.Length, typeof(T));
 
         return (maxValue - minValue) == (enumValuesCount - T.One);
     }

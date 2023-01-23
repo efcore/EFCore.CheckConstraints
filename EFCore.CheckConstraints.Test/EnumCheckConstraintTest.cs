@@ -54,6 +54,17 @@ public class EnumCheckConstraintConventionTest
     }
 
     [Fact]
+    public void Non_contiguous_with_duplicates()
+    {
+        var entityType = BuildEntityType(e => e.Property<NonContiguousWithDuplicatesEnum>("Type"));
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal("[Type] IN (0, 2)", checkConstraint.Sql);
+    }
+
+    [Fact]
     public void Contiguous_but_with_value_conversion_to_string()
     {
         var entityType = BuildEntityType(e => e.Property<ContiguousEnum>("Type").HasConversion<string>());
@@ -228,6 +239,13 @@ public class EnumCheckConstraintConventionTest
     {
         A = 0,
         B = 2
+    }
+
+    private enum NonContiguousWithDuplicatesEnum
+    {
+        A = 0,
+        B = 0,
+        C = 2
     }
 
     private enum EmptyEnum {}
