@@ -4,7 +4,6 @@ using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
@@ -23,12 +22,6 @@ public class EnumCheckConstraintConventionTest
     [InlineData(typeof(CustomerType))]
     [InlineData(typeof(CustomerType?))]
     [InlineData(typeof(CustomerTypeWithDuplicates))]
-    [InlineData(typeof(CustomerTypeUInt))]
-    [InlineData(typeof(CustomerTypeLong))]
-    [InlineData(typeof(CustomerTypeULong))]
-    [InlineData(typeof(CustomerTypeByte))]
-    [InlineData(typeof(CustomerTypeSByte))]
-    [InlineData(typeof(CustomerTypeShort))]
     [InlineData(typeof(CustomerTypeUShort))]
     [InlineData(typeof(CustomerTypeOutOfOrder))]
     public void Simple(Type enumType)
@@ -39,6 +32,22 @@ public class EnumCheckConstraintConventionTest
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
         Assert.Equal("[Type] BETWEEN 0 AND 1", checkConstraint.Sql);
+    }
+
+    [Theory]
+    [InlineData(typeof(CustomerTypeLong), "bigint")]
+    [InlineData(typeof(CustomerTypeUInt), "bigint")]
+    [InlineData(typeof(CustomerTypeByte), "tinyint")]
+    [InlineData(typeof(CustomerTypeSByte), "smallint")]
+    [InlineData(typeof(CustomerTypeShort), "smallint")]
+    public void Simple_WithCast(Type enumType, string destinationType)
+    {
+        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
+        Assert.Equal($"[Type] BETWEEN CAST(0 AS {destinationType}) AND CAST(1 AS {destinationType})", checkConstraint.Sql);
     }
 
     [Fact]
@@ -52,26 +61,18 @@ public class EnumCheckConstraintConventionTest
         Assert.Equal("[Type] IN (0, 2)", checkConstraint.Sql);
     }
 
-    [Fact]
-    public void Simple_NegativeValues()
+    [Theory]
+    [InlineData(typeof(CustomerTypeNegative), "-2", "-1")]
+    [InlineData(typeof(CustomerTypeStartingAfterZero), "12", "16")]
+    [InlineData(typeof(CustomerTypeULong), "0.0", "1.0")]
+    public void Simple_Range(Type enumType, string minValue, string maxValue)
     {
-        var entityType = BuildEntityType(e => e.Property<CustomerTypeNegative>("Type"));
+        var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] BETWEEN -2 AND -1", checkConstraint.Sql);
-    }
-
-    [Fact]
-    public void Simple_Range()
-    {
-        var entityType = BuildEntityType(e => e.Property<CustomerTypeStartingAfterZero>("Type"));
-
-        var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
-        Assert.NotNull(checkConstraint);
-        Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] BETWEEN 12 AND 16", checkConstraint.Sql);
+        Assert.Equal($"[Type] BETWEEN {minValue} AND {maxValue}", checkConstraint.Sql);
     }
 
     [Fact]
