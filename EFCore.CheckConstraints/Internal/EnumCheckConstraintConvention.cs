@@ -56,8 +56,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     continue;
                 }
 
-                var values = Enum.GetValues(propertyType);
-                if (values.Length == 0)
+                var enumValues = Enum.GetValues(propertyType);
+                if (enumValues.Length == 0)
                 {
                     continue;
                 }
@@ -66,7 +66,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
 
-                if (TryParseContiguousRange(typeMapping.Converter, values, out var minValue, out var maxValue))
+                if (TryParseContiguousRange(typeMapping.Converter, enumValues, out var minValue, out var maxValue))
                 {
                     sql.Append(" BETWEEN ");
                     sql.Append(typeMapping.GenerateSqlLiteral(minValue));
@@ -76,7 +76,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 else
                 {
                     sql.Append(" IN (");
-                    foreach (var item in values)
+                    foreach (var item in enumValues)
                     {
                         var value = typeMapping.GenerateSqlLiteral(item);
                         sql.Append($"{value}, ");
