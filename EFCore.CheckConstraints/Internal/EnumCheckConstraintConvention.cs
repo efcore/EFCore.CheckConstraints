@@ -133,6 +133,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
         var enumValuesCount = (T)Convert.ChangeType(enumValues.Length, typeof(T));
 
-        return (maxValue - minValue) == (enumValuesCount - T.One);
+        return enumValues.Length > 2 && (maxValue - minValue) == (enumValuesCount - T.One);
     }
 }

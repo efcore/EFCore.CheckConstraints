@@ -19,19 +19,19 @@ namespace EFCore.CheckConstraints.Test;
 public class EnumCheckConstraintConventionTest
 {
     [Theory]
-    [InlineData(typeof(ContiguousEnum), "0", "1")]
-    [InlineData(typeof(ContiguousUIntEnum), "CAST(0 AS bigint)", "CAST(1 AS bigint)")]
-    [InlineData(typeof(ContiguousLongEnum), "CAST(0 AS bigint)", "CAST(1 AS bigint)")]
-    [InlineData(typeof(ContiguousULongEnum), "0.0", "1.0")]
-    [InlineData(typeof(ContiguousShortEnum), "CAST(0 AS smallint)", "CAST(1 AS smallint)")]
-    [InlineData(typeof(ContiguousUShortEnum), "0", "1")]
-    [InlineData(typeof(ContiguousByteEnum), "CAST(0 AS tinyint)", "CAST(1 AS tinyint)")]
-    [InlineData(typeof(ContiguousSByteEnum), "CAST(0 AS smallint)", "CAST(1 AS smallint)")]
-    [InlineData(typeof(ContiguousEnum?), "0", "1")]
-    [InlineData(typeof(ContiguousNegativeEnum), "-2", "-1")]
-    [InlineData(typeof(ContiguousWithDuplicatesEnum), "0", "1")]
+    [InlineData(typeof(ContiguousEnum), "0", "2")]
+    [InlineData(typeof(ContiguousUIntEnum), "CAST(0 AS bigint)", "CAST(2 AS bigint)")]
+    [InlineData(typeof(ContiguousLongEnum), "CAST(0 AS bigint)", "CAST(2 AS bigint)")]
+    [InlineData(typeof(ContiguousULongEnum), "0.0", "2.0")]
+    [InlineData(typeof(ContiguousShortEnum), "CAST(0 AS smallint)", "CAST(2 AS smallint)")]
+    [InlineData(typeof(ContiguousUShortEnum), "0", "2")]
+    [InlineData(typeof(ContiguousByteEnum), "CAST(0 AS tinyint)", "CAST(2 AS tinyint)")]
+    [InlineData(typeof(ContiguousSByteEnum), "CAST(0 AS smallint)", "CAST(2 AS smallint)")]
+    [InlineData(typeof(ContiguousEnum?), "0", "2")]
+    [InlineData(typeof(ContiguousNegativeEnum), "-3", "-1")]
+    [InlineData(typeof(ContiguousWithDuplicatesEnum), "0", "2")]
     [InlineData(typeof(ContiguousStartingAfterZeroEnum), "12", "16")]
-    [InlineData(typeof(ContiguousOutOfOrderEnum), "0", "1")]
+    [InlineData(typeof(ContiguousOutOfOrderEnum), "0", "2")]
     public void Contiguous_enums(Type enumType, string minValue, string maxValue)
     {
         var entityType = BuildEntityType(e => e.Property(enumType, "Type"));
@@ -50,7 +50,7 @@ public class EnumCheckConstraintConventionTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (0, 2)", checkConstraint.Sql);
+        Assert.Equal("[Type] IN (0, 2, 3)", checkConstraint.Sql);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class EnumCheckConstraintConventionTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints());
         Assert.NotNull(checkConstraint);
         Assert.Equal("CK_Customer_Type_Enum", checkConstraint.Name);
-        Assert.Equal("[Type] IN (N'A', N'B')", checkConstraint.Sql);
+        Assert.Equal("[Type] IN (N'A', N'B', N'C')", checkConstraint.Sql);
     }
 
     [Fact]
@@ -162,62 +162,72 @@ public class EnumCheckConstraintConventionTest
     private enum ContiguousEnum
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousNegativeEnum
     {
         A = -1,
-        B = -2
+        B = -2,
+        C = -3
     }
 
     private enum ContiguousWithDuplicatesEnum
     {
         A = 0,
         B = 0,
-        C = 1
+        C = 1,
+        D = 2
     }
 
     private enum ContiguousUIntEnum : uint
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousLongEnum : long
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousULongEnum : ulong
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousByteEnum : byte
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousSByteEnum : sbyte
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousShortEnum : short
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousUShortEnum : ushort
     {
         A = 0,
-        B = 1
+        B = 1,
+        C = 2
     }
 
     private enum ContiguousStartingAfterZeroEnum
@@ -231,6 +241,7 @@ public class EnumCheckConstraintConventionTest
 
     private enum ContiguousOutOfOrderEnum
     {
+        C = 2,
         B = 1,
         A = 0
     }
@@ -238,7 +249,8 @@ public class EnumCheckConstraintConventionTest
     private enum NonContiguousEnum
     {
         A = 0,
-        B = 2
+        B = 2,
+        C = 3
     }
 
     private enum NonContiguousWithDuplicatesEnum
