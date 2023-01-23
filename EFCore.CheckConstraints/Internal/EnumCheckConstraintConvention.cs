@@ -94,7 +94,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
     private bool TryParseContiguousRange(ValueConverter? converter, IEnumerable values, out object? minValue, out object? maxValue)
     {
-        // if the database destination type is not a type that implements INumber<>, we cannot 
+        // if the database destination type is not a type that implements INumber<>, we cannot do numeric operations
         if (converter?.ProviderClrType.GetInterfaces()
                 .Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == _iNumberType) is not true)
         {
@@ -103,11 +103,9 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
             return false;
         }
 
-        var underlyingType = Enum.GetUnderlyingType(converter.ModelClrType);
-
         var parameters = new object?[] { values, null, null };
 
-        var success = (bool)GetGenericTryGetMinMax(underlyingType).Invoke(null, parameters)!;
+        var success = (bool)GetGenericTryGetMinMax(converter.ModelClrType).Invoke(null, parameters)!;
 
         minValue = success ? parameters[1] : default;
         maxValue = success ? parameters[2] : default;
@@ -115,8 +113,10 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         return success;
     }
 
-    private MethodInfo GetGenericTryGetMinMax(Type underlyingType)
+    private MethodInfo GetGenericTryGetMinMax(Type modelClrType)
     {
+        var underlyingType = Enum.GetUnderlyingType(modelClrType);
+
         // ReSharper disable once InvertIf
         if (!_cachedTryGetMinMaxMethodInfos.TryGetValue(underlyingType, out var methodInfo))
         {
