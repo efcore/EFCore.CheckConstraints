@@ -18,7 +18,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 {
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
-    private readonly MethodInfo _tryGetMinMaxMethodInfo;
     private readonly Type _iNumberType = typeof(INumber<>);
     private readonly Dictionary<Type, MethodInfo> _cachedTryGetMinMaxMethodInfos;
 
@@ -27,7 +26,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         _typeMappingSource = typeMappingSource;
         _sqlGenerationHelper = sqlGenerationHelper;
         _cachedTryGetMinMaxMethodInfos = new Dictionary<Type, MethodInfo>();
-        _tryGetMinMaxMethodInfo = GetType().GetTypeInfo().GetDeclaredMethod(nameof(TryGetMinMax))!;
     }
 
     public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
@@ -56,7 +54,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     continue;
                 }
 
-                var enumValues = Enum.GetValues(propertyType);
+                var enumValues = Enum.GetValuesAsUnderlyingType(propertyType).Cast<object>().Distinct().ToArray();
                 if (enumValues.Length == 0)
                 {
                     continue;
@@ -66,7 +64,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
 
-                if (TryParseContiguousRange(typeMapping.Converter, enumValues, out var minValue, out var maxValue))
+                if (enumValues.Length > 2
+                    && TryParseContiguousRange(typeMapping.Converter, enumValues, out var minValue, out var maxValue))
                 {
                     sql.Append(" BETWEEN ");
                     sql.Append(typeMapping.GenerateSqlLiteral(minValue));
@@ -103,9 +102,20 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
             return false;
         }
 
-        var parameters = new object?[] { values, null, null };
+        var underlyingType = Enum.GetUnderlyingType(converter.ModelClrType);
 
-        var success = (bool)GetGenericTryGetMinMax(converter.ModelClrType).Invoke(null, parameters)!;
+        // ReSharper disable once InvertIf
+        if (!_cachedTryGetMinMaxMethodInfos.TryGetValue(underlyingType, out var getMinMaxMethod))
+        {
+            getMinMaxMethod = typeof(EnumCheckConstraintConvention).GetTypeInfo()
+                .GetDeclaredMethod(nameof(TryGetMinMax))!
+                .MakeGenericMethod(underlyingType);
+
+            _cachedTryGetMinMaxMethodInfos.Add(underlyingType, getMinMaxMethod);
+        }
+
+        var parameters = new object?[] { values, null, null };
+        var success = (bool)getMinMaxMethod.Invoke(null, parameters)!;
 
         minValue = success ? parameters[1] : default;
         maxValue = success ? parameters[2] : default;
@@ -113,30 +123,15 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
         return success;
     }
 
-    private MethodInfo GetGenericTryGetMinMax(Type modelClrType)
-    {
-        var underlyingType = Enum.GetUnderlyingType(modelClrType);
-
-        // ReSharper disable once InvertIf
-        if (!_cachedTryGetMinMaxMethodInfos.TryGetValue(underlyingType, out var methodInfo))
-        {
-            methodInfo = _tryGetMinMaxMethodInfo.MakeGenericMethod(underlyingType);
-
-            _cachedTryGetMinMaxMethodInfos.Add(underlyingType, methodInfo);
-        }
-
-        return methodInfo;
-    }
-
-    private static bool TryGetMinMax<T>(IEnumerable values, out T minValue, out T maxValue)
+    private static bool TryGetMinMax<T>(object[] values, out T minValue, out T maxValue)
         where T : INumber<T>
     {
-        var enumValues = values.Cast<T>().Distinct().ToList();
+        var enumValues = values.Cast<T>().ToArray();
 
         minValue = enumValues.Min()!;
         maxValue = enumValues.Max()!;
 
-        var enumValuesCount = (T)Convert.ChangeType(enumValues.Count, typeof(T));
+        var enumValuesCount = (T)Convert.ChangeType(enumValues.Length, typeof(T));
 
         return (maxValue - minValue) == (enumValuesCount - T.One);
     }
