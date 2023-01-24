@@ -64,7 +64,8 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
                 sql.Append(_sqlGenerationHelper.DelimitIdentifier(columnName));
 
-                if (TryParseContiguousRange(typeMapping.Converter, enumValues, out var minValue, out var maxValue))
+                if (enumValues.Length > 2
+                    && TryParseContiguousRange(typeMapping.Converter, enumValues, out var minValue, out var maxValue))
                 {
                     sql.Append(" BETWEEN ");
                     sql.Append(typeMapping.GenerateSqlLiteral(minValue));
@@ -101,8 +102,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
             return false;
         }
 
-        var parameters = new object?[] { values, null, null };
-
         var underlyingType = Enum.GetUnderlyingType(converter.ModelClrType);
 
         // ReSharper disable once InvertIf
@@ -115,6 +114,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
             _cachedTryGetMinMaxMethodInfos.Add(underlyingType, getMinMaxMethod);
         }
 
+        var parameters = new object?[] { values, null, null };
         var success = (bool)getMinMaxMethod.Invoke(null, parameters)!;
 
         minValue = success ? parameters[1] : default;
@@ -133,6 +133,6 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
         var enumValuesCount = (T)Convert.ChangeType(enumValues.Length, typeof(T));
 
-        return enumValues.Length > 2 && (maxValue - minValue) == (enumValuesCount - T.One);
+        return (maxValue - minValue) == (enumValuesCount - T.One);
     }
 }
