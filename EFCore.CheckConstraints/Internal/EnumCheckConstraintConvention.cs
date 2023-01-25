@@ -62,7 +62,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                         continue;
                     }
 
-                    _cachedConstraints[typeMapping] = sql.ToString();
+                    _cachedConstraints[typeMapping] = constraintSql;
                 }
 
                 entityType.AddCheckConstraint(
