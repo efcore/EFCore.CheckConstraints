@@ -106,6 +106,28 @@ public class EnumCheckConstraintConventionTest
     }
 
     [Fact]
+    public void Same_enum_twice_with_different_value_converters()
+    {
+        var entityType = BuildEntityType(e =>
+        {
+            e.Property<NonContiguousEnum>("Type1");
+            e.Property<NonContiguousEnum>("Type2").HasConversion<string>();
+        });
+
+        Assert.Collection(entityType.GetCheckConstraints().OrderBy(c => c.Name),
+            c =>
+            {
+                Assert.Equal("CK_Customer_Type1_Enum", c.Name);
+                Assert.Equal("[Type1] IN (0, 2, 3)", c.Sql);
+            },
+            c =>
+            {
+                Assert.Equal("CK_Customer_Type2_Enum", c.Name);
+                Assert.Equal("[Type2] IN (N'A', N'B', N'C')", c.Sql);
+            });
+    }
+
+    [Fact]
     public void Constraint_not_created_for_flags_enum()
     {
         var entityType = BuildEntityType(e => e.Property<FlagsEnum>("Type"));
