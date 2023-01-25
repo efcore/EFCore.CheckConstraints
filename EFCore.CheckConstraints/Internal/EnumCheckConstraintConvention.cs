@@ -50,7 +50,10 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                 if (!propertyType.IsEnum
                     || typeMapping is null
                     || propertyType.IsDefined(typeof(FlagsAttribute), true)
-                    || property.GetColumnName(tableIdentifier) is not { } columnName)
+                    || property.GetColumnName(tableIdentifier) is not { } columnName
+                    // Skip enums mapped to enums in the database, assuming that the database enforces correctness and a check constraint
+                    // isn't needed. This is the case for PostgreSQL native enums.
+                    || (typeMapping.Converter?.ProviderClrType ?? typeMapping.ClrType).IsEnum)
                 {
                     continue;
                 }
