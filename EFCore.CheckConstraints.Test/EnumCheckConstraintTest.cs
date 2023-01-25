@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
+using Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -134,6 +135,16 @@ public class EnumCheckConstraintConventionTest
             ck => Assert.Equal("CK_SpecialCustomer_AnotherType_Enum", ck.Name));
     }
 
+    [Fact]
+    public void No_check_constraint_for_database_enums()
+    {
+        // Simulate the PostgreSQL case, where we can map to database enums without any conversion.
+        // No check constraint should be created.
+        var entityType = BuildEntityType(e => e.Property<CustomerType>("Type"), new SqlServerTestHelpersWithEnumSupport());
+
+        Assert.Empty(entityType.GetCheckConstraints());
+    }
+
     #region Support
 
     private enum CustomerType
@@ -151,9 +162,11 @@ public class EnumCheckConstraintConventionTest
         Premium = 1
     }
 
-    private IModel BuildModel(Action<ModelBuilder> buildAction)
+    private IModel BuildModel(Action<ModelBuilder> buildAction, TestHelpers? testHelpers = null)
     {
-        var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+        testHelpers ??= SqlServerTestHelpers.Instance;
+
+        var serviceProvider = testHelpers.CreateContextServices();
         var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
         conventionSet.ModelFinalizingConventions.Add(
@@ -166,8 +179,51 @@ public class EnumCheckConstraintConventionTest
         return builder.FinalizeModel();
     }
 
-    private IEntityType BuildEntityType(Action<EntityTypeBuilder> buildAction)
-        => BuildModel(b => buildAction(b.Entity("Customer"))).GetEntityTypes().Single();
+    private class SqlServerTestHelpersWithEnumSupport : SqlServerTestHelpers
+    {
+        public override IServiceCollection AddProviderServices(IServiceCollection services)
+        {
+            base.AddProviderServices(services);
+            services.AddSingleton<IRelationalTypeMappingSource, SqlServerTypeMappingSourceWithEnumSupport>();
+            return services;
+        }
+    }
+
+#pragma warning disable EF1001
+    class SqlServerTypeMappingSourceWithEnumSupport : SqlServerTypeMappingSource
+    {
+        public SqlServerTypeMappingSourceWithEnumSupport(
+            TypeMappingSourceDependencies dependencies,
+            RelationalTypeMappingSourceDependencies relationalDependencies)
+            : base(dependencies, relationalDependencies)
+        {
+        }
+
+        protected override RelationalTypeMapping? FindMapping(in RelationalTypeMappingInfo mappingInfo)
+            => mappingInfo.ClrType?.IsEnum == true
+                ? new FakeEnumTypeMapping("fake_enum", mappingInfo.ClrType)
+                : base.FindMapping(in mappingInfo);
+
+        private class FakeEnumTypeMapping : RelationalTypeMapping
+        {
+            public FakeEnumTypeMapping(string storeType, Type clrType)
+                : base(storeType, clrType)
+            {
+            }
+
+            private FakeEnumTypeMapping(RelationalTypeMappingParameters parameters)
+                : base(parameters)
+            {
+            }
+
+            protected override RelationalTypeMapping Clone(RelationalTypeMappingParameters parameters)
+                => new FakeEnumTypeMapping(parameters);
+        }
+    }
+#pragma warning restore EF1001
+
+    private IEntityType BuildEntityType(Action<EntityTypeBuilder> buildAction, TestHelpers? testHelpers = null)
+        => BuildModel(b => buildAction(b.Entity("Customer")), testHelpers).GetEntityTypes().Single();
 
     #endregion
 }
