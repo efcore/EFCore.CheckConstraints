@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -20,7 +21,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
     private readonly Type _iNumberType = typeof(INumber<>);
     private readonly Dictionary<Type, MethodInfo> _cachedTryGetMinMaxMethodInfos = new();
-    private readonly Dictionary<Type, string> _cachedConstraints = new();
+    private readonly Dictionary<RelationalTypeMapping, string> _cachedConstraints = new();
 
     public EnumCheckConstraintConvention(IRelationalTypeMappingSource typeMappingSource, ISqlGenerationHelper sqlGenerationHelper)
     {
@@ -54,38 +55,14 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                     continue;
                 }
 
-                if (!_cachedConstraints.TryGetValue(propertyType, out var constraintSql))
+                if (!_cachedConstraints.TryGetValue(typeMapping, out var constraintSql))
                 {
-                    var enumValues = Enum.GetValuesAsUnderlyingType(propertyType).Cast<object>().Distinct().ToArray();
-                    if (enumValues.Length == 0)
+                    if (!TryGenerateCheckConstraint(typeMapping, out constraintSql))
                     {
                         continue;
                     }
 
-                    sql.Clear();
-
-                    if (enumValues.Length > 2
-                        && TryParseContiguousRange(typeMapping.Converter, enumValues, out var minValue, out var maxValue))
-                    {
-                        sql.Append(" BETWEEN ");
-                        sql.Append(typeMapping.GenerateSqlLiteral(minValue));
-                        sql.Append(" AND ");
-                        sql.Append(typeMapping.GenerateSqlLiteral(maxValue));
-                    }
-                    else
-                    {
-                        sql.Append(" IN (");
-                        foreach (var item in enumValues)
-                        {
-                            var value = typeMapping.GenerateSqlLiteral(item);
-                            sql.Append($"{value}, ");
-                        }
-
-                        sql.Remove(sql.Length - 2, 2);
-                        sql.Append(')');
-                    }
-
-                    constraintSql = sql.ToString();
+                    _cachedConstraints[typeMapping] = sql.ToString();
                 }
 
                 entityType.AddCheckConstraint(
@@ -97,6 +74,44 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
                         .ToString());
             }
         }
+    }
+
+    private bool TryGenerateCheckConstraint(RelationalTypeMapping typeMapping, [NotNullWhen(true)] out string? constraintSql)
+    {
+        Check.DebugAssert(typeMapping.ClrType.IsEnum, "mapping.ClrType.IsEnum");
+
+        var enumValues = Enum.GetValuesAsUnderlyingType(typeMapping.ClrType).Cast<object>().Distinct().ToArray();
+        if (enumValues.Length == 0)
+        {
+            constraintSql = null;
+            return false;
+        }
+
+        var sql = new StringBuilder();
+
+        if (enumValues.Length > 2
+            && TryParseContiguousRange(typeMapping.Converter, enumValues, out var minValue, out var maxValue))
+        {
+            sql.Append(" BETWEEN ");
+            sql.Append(typeMapping.GenerateSqlLiteral(minValue));
+            sql.Append(" AND ");
+            sql.Append(typeMapping.GenerateSqlLiteral(maxValue));
+        }
+        else
+        {
+            sql.Append(" IN (");
+            foreach (var item in enumValues)
+            {
+                var value = typeMapping.GenerateSqlLiteral(item);
+                sql.Append($"{value}, ");
+            }
+
+            sql.Remove(sql.Length - 2, 2);
+            sql.Append(')');
+        }
+
+        constraintSql = sql.ToString();
+        return true;
     }
 
     private bool TryParseContiguousRange(ValueConverter? converter, IEnumerable values, out object? minValue, out object? maxValue)
