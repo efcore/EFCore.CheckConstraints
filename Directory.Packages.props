@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <EFCoreVersion>[7.0.0,8.0.0)</EFCoreVersion>
     <MicrosoftExtensionsVersion>7.0.0</MicrosoftExtensionsVersion>
@@ -14,6 +14,6 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Specification.Tests" Version="$(EFCoreVersion)" />
     <PackageVersion Include="xunit" Version="2.4.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
   </ItemGroup>
 </Project>
