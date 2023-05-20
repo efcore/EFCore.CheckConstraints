@@ -22,13 +22,10 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
     public const string DefaultUrlAddressRegex = @"^(http://|https://|ftp://)";
 
-    public const string SqlServerDatabaseProviderName = "MICROSOFT.ENTITYFRAMEWORKCORE.SQLSERVER";
-
-    public const string SqliteDatabaseProviderName = "MICROSOFT.ENTITYFRAMEWORKCORE.SQLITE";
-
-    public const string PostgreSqlDatabaseProviderName = "NPGSQL.ENTITYFRAMEWORKCORE.POSTGRESQL";
-
-    public const string MySqlDatabaseProviderName = "POMELO.ENTITYFRAMEWORKCORE.MYSQL";
+    public const string SqlServerDatabaseProviderName = "Microsoft.EntityFrameworkCore.SqlServer";
+    public const string SqliteDatabaseProviderName = "Microsoft.EntityFrameworkCore.Sqlite";
+    public const string PostgreSqlDatabaseProviderName = "Npgsql.EntityFrameworkCore.PostgreSQL";
+    public const string MySqlDatabaseProviderName = "Pomelo.EntityFrameworkCore.MySql";
 
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
@@ -169,7 +166,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
         StringBuilder sql,
         int minLength)
     {
-        var lengthFunctionName = _databaseProvider.Name.ToUpper() switch
+        var lengthFunctionName = _databaseProvider.Name switch
         {
             SqlServerDatabaseProviderName => "LEN",
             SqliteDatabaseProviderName => "LENGTH",
@@ -274,7 +271,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
     protected virtual string GenerateRegexSql(string columnName, [RegexPattern] string regex)
         => string.Format(
-            _databaseProvider.Name.ToUpper() switch
+            _databaseProvider.Name switch
             {
                 // For SQL Server, requires setup:
                 // https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench/
@@ -286,7 +283,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
             }, _sqlGenerationHelper.DelimitIdentifier(columnName), regex);
 
     protected virtual bool SupportsRegex
-        => _databaseProvider.Name.ToUpper() switch
+        => _databaseProvider.Name switch
         {
             SqlServerDatabaseProviderName => true,
             SqliteDatabaseProviderName => true,
