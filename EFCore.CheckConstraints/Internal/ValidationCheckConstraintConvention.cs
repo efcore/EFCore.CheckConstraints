@@ -22,6 +22,11 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
     public const string DefaultUrlAddressRegex = @"^(http://|https://|ftp://)";
 
+    public const string SqlServerDatabaseProviderName = "Microsoft.EntityFrameworkCore.SqlServer";
+    public const string SqliteDatabaseProviderName = "Microsoft.EntityFrameworkCore.Sqlite";
+    public const string PostgreSqlDatabaseProviderName = "Npgsql.EntityFrameworkCore.PostgreSQL";
+    public const string MySqlDatabaseProviderName = "Pomelo.EntityFrameworkCore.MySql";
+
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
     private readonly IDatabaseProvider _databaseProvider;
@@ -163,10 +168,10 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
         var lengthFunctionName = _databaseProvider.Name switch
         {
-            "Microsoft.EntityFrameworkCore.SqlServer" => "LEN",
-            "Microsoft.EntityFrameworkCore.Sqlite" => "LENGTH",
-            "Npgsql.EntityFrameworkCore.PostgreSQL" => "LENGTH",
-            "Pomelo.EntityFrameworkCore.MySQL" => "LENGTH",
+            SqlServerDatabaseProviderName => "LEN",
+            SqliteDatabaseProviderName => "LENGTH",
+            PostgreSqlDatabaseProviderName => "LENGTH",
+            MySqlDatabaseProviderName => "LENGTH",
             _ => null
         };
 
@@ -270,20 +275,20 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
             {
                 // For SQL Server, requires setup:
                 // https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench/
-                "Microsoft.EntityFrameworkCore.SqlServer" => "dbo.RegexMatch('{1}', {0})",
-                "Microsoft.EntityFrameworkCore.Sqlite" => "{0} REGEXP '{1}'",
-                "Npgsql.EntityFrameworkCore.PostgreSQL" => "{0} ~ '{1}'",
-                "Pomelo.EntityFrameworkCore.MySQL" => "{0} REGEXP '{1}'",
+                SqlServerDatabaseProviderName => "dbo.RegexMatch('{1}', {0})",
+                SqliteDatabaseProviderName => "{0} REGEXP '{1}'",
+                PostgreSqlDatabaseProviderName => "{0} ~ '{1}'",
+                MySqlDatabaseProviderName => "{0} REGEXP '{1}'",
                 _ => throw new InvalidOperationException($"Provider {_databaseProvider.Name} doesn't support regular expressions")
             }, _sqlGenerationHelper.DelimitIdentifier(columnName), regex);
 
     protected virtual bool SupportsRegex
         => _databaseProvider.Name switch
         {
-            "Microsoft.EntityFrameworkCore.SqlServer" => true,
-            "Microsoft.EntityFrameworkCore.Sqlite" => true,
-            "Npgsql.EntityFrameworkCore.PostgreSQL" => true,
-            "Pomelo.EntityFrameworkCore.MySQL" => true,
+            SqlServerDatabaseProviderName => true,
+            SqliteDatabaseProviderName => true,
+            PostgreSqlDatabaseProviderName => true,
+            MySqlDatabaseProviderName => true,
             _ => false
         };
 }
