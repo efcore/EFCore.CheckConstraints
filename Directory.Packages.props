@@ -14,6 +14,6 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Specification.Tests" Version="$(EFCoreVersion)" />
     <PackageVersion Include="xunit" Version="2.5.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.7.0" />
   </ItemGroup>
 </Project>
