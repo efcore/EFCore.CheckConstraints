@@ -43,7 +43,7 @@ public class EnumCheckConstraintConvention : IModelFinalizingConvention
 
             var tableIdentifier = StoreObjectIdentifier.Table(tableName, entityType.GetSchema());
 
-            foreach (var property in entityType.GetDeclaredProperties())
+            foreach (var property in entityType.GetContainedProperties())
             {
                 var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping() ?? _typeMappingSource.FindMapping((IProperty)property);
                 var propertyType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
