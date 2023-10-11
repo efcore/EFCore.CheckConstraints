@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
@@ -21,9 +22,15 @@ public class ValidationCheckConstraintTest
     {
         var entityType = BuildEntityType<Blog>();
 
-        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Rating_Range");
-        Assert.NotNull(checkConstraint);
-        Assert.Equal("[Rating] >= 1 AND [Rating] <= 5", checkConstraint.Sql);
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Rating_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[Rating] >= 1 AND [Rating] <= 5", ratingCheckConstraint.Sql);
+
+        var longitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Longitude_Range");
+        Assert.Equal("[Location_Longitude] >= -180.0E0 AND [Location_Longitude] <= 180.0E0", longitudeCheckConstraint.Sql);
+
+        var latitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Latitude_Range");
+        Assert.Equal("[Location_Latitude] >= -90.0E0 AND [Location_Latitude] <= 90.0E0", latitudeCheckConstraint.Sql);
     }
 
     [Fact]
@@ -142,8 +149,20 @@ public class ValidationCheckConstraintTest
 
         [RegularExpression("^A")]
         public string StartsWithA { get; set; } = null!;
+
+        public required Location Location { get; set; }
     }
     // ReSharper restore UnusedMember.Local
+
+    [ComplexType]
+    public class Location
+    {
+        [Range(-180.0, 180.0)]
+        public double Longitude { get; set; }
+
+        [Range(-90.0, 90.0)]
+        public double Latitude { get; set; }
+    }
 
     private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex)
     {

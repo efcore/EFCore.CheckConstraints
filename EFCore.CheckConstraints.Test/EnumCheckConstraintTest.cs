@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using EFCore.CheckConstraints.Internal;
@@ -201,6 +202,35 @@ public class EnumCheckConstraintConventionTest
             model.FindEntityType("SpecialCustomer")!.GetCheckConstraints().OrderBy(ck => ck.Name),
             ck => Assert.Same(customerCheckConstraint, ck),
             ck => Assert.Equal("CK_SpecialCustomer_AnotherType_Enum", ck.Name));
+    }
+
+    [Fact]
+    public void ComplexType()
+    {
+        var model = BuildModel(b =>
+        {
+            b.Entity("Customer", e =>
+            {
+                e.Property<int>("Id");
+                e.ComplexProperty<Dictionary<string, object>>("Types", c =>
+                {
+                    c.Property<ContiguousEnum>("Type");
+                    c.Property<ContiguousEnum>("AnotherType");
+                });
+            });
+        });
+
+        Assert.Collection(model.FindEntityType("Customer")!.GetCheckConstraints().OrderBy(c => c.Name),
+            c =>
+            {
+                Assert.Equal("CK_Customer_Types_AnotherType_Enum", c.Name);
+                Assert.Equal("[Types_AnotherType] BETWEEN 0 AND 2", c.Sql);
+            },
+            c =>
+            {
+                Assert.Equal("CK_Customer_Types_Type_Enum", c.Name);
+                Assert.Equal("[Types_Type] BETWEEN 0 AND 2", c.Sql);
+            });
     }
 
     [Fact]

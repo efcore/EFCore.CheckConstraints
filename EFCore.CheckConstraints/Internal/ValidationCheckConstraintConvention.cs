@@ -66,7 +66,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                 continue;
             }
 
-            foreach (var property in entityType.GetDeclaredProperties().Where(p => p.PropertyInfo != null || p.FieldInfo != null))
+            foreach (var property in entityType.GetContainedProperties().Where(p => p.PropertyInfo != null || p.FieldInfo != null))
             {
                 var memberInfo = (MemberInfo?)property.PropertyInfo ?? property.FieldInfo;
                 if (memberInfo is null)
@@ -129,7 +129,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
             .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
 
         var constraintName = $"CK_{tableName}_{columnName}_Range";
-        property.DeclaringEntityType.AddCheckConstraint(constraintName, sql.ToString());
+        property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
     }
 
     protected virtual void ProcessMinLength(
@@ -191,7 +191,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
             .Append(_intTypeMapping.GenerateSqlLiteral(minLength));
 
         var constraintName = $"CK_{tableName}_{columnName}_MinLength";
-        property.DeclaringEntityType.AddCheckConstraint(constraintName, sql.ToString());
+        property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
     }
 
     protected virtual void ProcessPhoneNumber(
@@ -203,7 +203,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
         if (memberInfo.GetCustomAttribute<PhoneAttribute>() != null)
         {
-            property.DeclaringEntityType.AddCheckConstraint(
+            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
                 $"CK_{tableName}_{columnName}_Phone",
                 GenerateRegexSql(columnName, _phoneRegex));
         }
@@ -218,7 +218,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
         if (memberInfo.GetCustomAttribute<CreditCardAttribute>() != null)
         {
-            property.DeclaringEntityType.AddCheckConstraint(
+            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
                 $"CK_{tableName}_{columnName}_CreditCard",
                 GenerateRegexSql(columnName, _creditCardRegex));
         }
@@ -233,7 +233,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
         if (memberInfo.GetCustomAttribute<EmailAddressAttribute>() != null)
         {
-            property.DeclaringEntityType.AddCheckConstraint(
+            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
                 $"CK_{tableName}_{columnName}_EmailAddress",
                 GenerateRegexSql(columnName, _emailAddressRegex));
         }
@@ -248,7 +248,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
         if (memberInfo.GetCustomAttribute<UrlAttribute>() != null)
         {
-            property.DeclaringEntityType.AddCheckConstraint(
+            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
                 $"CK_{tableName}_{columnName}_Url",
                 GenerateRegexSql(columnName, _urlRegex));
         }
@@ -263,7 +263,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     {
         if (memberInfo.GetCustomAttribute<RegularExpressionAttribute>()?.Pattern is string pattern)
         {
-            property.DeclaringEntityType.AddCheckConstraint(
+            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
                 $"CK_{tableName}_{columnName}_RegularExpression",
                 GenerateRegexSql(columnName, pattern));
         }
