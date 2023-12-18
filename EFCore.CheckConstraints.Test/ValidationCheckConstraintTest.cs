@@ -6,7 +6,6 @@ using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
@@ -51,6 +50,40 @@ public class ValidationCheckConstraintTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Required_MinLength");
         Assert.NotNull(checkConstraint);
         Assert.Equal("LEN([Required]) >= 1", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void RequiredInt()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredInt_MinLength");
+    }
+
+    [Fact]
+    public void RequiredIntWithAllowEmptyStringsFalse()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredIntWithAllowEmptyStringsFalse_MinLength");
+    }
+
+    [Fact]
+    public void RequiredAllowEmptyStringsFalse()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredAllowEmptyStringsFalse_MinLength");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("LEN([RequiredAllowEmptyStringsFalse]) >= 1", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void RequiredAllowEmptyStringsTrue()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredAllowEmptyStringsTrue_MinLength");
     }
 
     [Fact]
@@ -134,6 +167,18 @@ public class ValidationCheckConstraintTest
 
         [StringLength(100, MinimumLength = 1)]
         public string Required { get; set; } = null!;
+
+        [Required]
+        public int RequiredInt { get; set; }
+
+        [Required(AllowEmptyStrings = false)]
+        public int RequiredIntWithAllowEmptyStringsFalse { get; set; }
+
+        [Required(AllowEmptyStrings = false)]
+        public string RequiredAllowEmptyStringsFalse { get; set; } = null!;
+
+        [Required(AllowEmptyStrings = true)]
+        public string RequiredAllowEmptyStringsTrue { get; set; } = null!;
 
         [Phone]
         public string PhoneNumber { get; set; } = null!;

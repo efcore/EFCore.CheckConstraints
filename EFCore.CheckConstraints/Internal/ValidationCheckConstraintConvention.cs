@@ -83,6 +83,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                 ProcessRange(property, memberInfo, tableName, columnName, sql);
                 ProcessMinLength(property, memberInfo, tableName, columnName, sql);
                 ProcessStringLengthMinimumLength(property, memberInfo, tableName, columnName, sql);
+                ProcessRequiredAllowEmptyStrings(property, memberInfo, tableName, columnName, sql);
 
                 if (_useRegex)
                 {
@@ -155,6 +156,21 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
         if (_intTypeMapping is not null && memberInfo.GetCustomAttribute<StringLengthAttribute>()?.MinimumLength is int minLength)
         {
             ProcessMinimumLengthInternal(property, memberInfo, tableName, columnName, sql, minLength);
+        }
+    }
+
+    protected virtual void ProcessRequiredAllowEmptyStrings(
+        IConventionProperty property,
+        MemberInfo memberInfo,
+        string tableName,
+        string columnName,
+        StringBuilder sql)
+    {
+        if (_intTypeMapping is not null
+            && memberInfo.GetCustomAttribute<RequiredAttribute>()?.AllowEmptyStrings is false
+            && memberInfo.GetMemberType() == typeof(string))
+        {
+            ProcessMinimumLengthInternal(property, memberInfo, tableName, columnName, sql, 1);
         }
     }
 
