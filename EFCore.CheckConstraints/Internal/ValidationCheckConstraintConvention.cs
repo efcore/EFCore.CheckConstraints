@@ -14,13 +14,13 @@ namespace EFCore.CheckConstraints.Internal;
 
 public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 {
-    public const string DefaultPhoneRegex = @"^[\d\s+-.()]*\d[\d\s+-.()]*((ext\.|ext|x)\s*\d+)?\s*$";
+    public const string DefaultPhoneRegex = """^[\d\s+-.()]*\d[\d\s+-.()]*((ext\.|ext|x)\s*\d+)?\s*$""";
 
-    public const string DefaultCreditCardRegex = @"^[\d- ]*$";
+    public const string DefaultCreditCardRegex = """^[\d- ]*$""";
 
-    public const string DefaultEmailAddressRegex = @"^[^@]+@[^@]+$";
+    public const string DefaultEmailAddressRegex = """^[^@]+@[^@]+$""";
 
-    public const string DefaultUrlAddressRegex = @"^(http://|https://|ftp://)";
+    public const string DefaultUrlAddressRegex = """^(http://|https://|ftp://)""";
 
     public const string SqlServerDatabaseProviderName = "Microsoft.EntityFrameworkCore.SqlServer";
     public const string SqliteDatabaseProviderName = "Microsoft.EntityFrameworkCore.Sqlite";
@@ -30,7 +30,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
     private readonly IDatabaseProvider _databaseProvider;
-    private readonly RelationalTypeMapping _intTypeMapping;
+    private readonly RelationalTypeMapping? _intTypeMapping;
 
     private readonly bool _useRegex;
     private readonly string _phoneRegex, _creditCardRegex, _emailAddressRegex, _urlRegex;
@@ -80,18 +80,63 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                     continue;
                 }
 
-                ProcessRange(property, memberInfo, tableName, columnName, sql);
-                ProcessMinLength(property, memberInfo, tableName, columnName, sql);
-                ProcessStringLengthMinimumLength(property, memberInfo, tableName, columnName, sql);
-                ProcessRequiredAllowEmptyStrings(property, memberInfo, tableName, columnName, sql);
-
-                if (_useRegex)
+                foreach (var attribute in memberInfo.GetCustomAttributes())
                 {
-                    ProcessPhoneNumber(property, memberInfo, tableName, columnName, sql);
-                    ProcessCreditCard(property, memberInfo, tableName, columnName, sql);
-                    ProcessEmailAddress(property, memberInfo, tableName, columnName, sql);
-                    ProcessUrl(property, memberInfo, tableName, columnName, sql);
-                    ProcessRegularExpression(property, memberInfo, tableName, columnName, sql);
+                    switch (attribute)
+                    {
+                        case RangeAttribute a:
+                            ProcessRange(property, memberInfo, a, tableName, columnName, sql);
+                            continue;
+
+                        case MinLengthAttribute a when _intTypeMapping is not null:
+                            AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, a.Length);
+                            continue;
+
+                        case StringLengthAttribute a when _intTypeMapping is not null:
+                            AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, a.MinimumLength);
+                            continue;
+
+                        case RequiredAttribute { AllowEmptyStrings: false }
+                            when _intTypeMapping is not null && memberInfo.GetMemberType() == typeof(string):
+                            AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, minLength: 1);
+                            continue;
+                    }
+
+                    if (_useRegex)
+                    {
+                        switch (attribute)
+                        {
+                            case PhoneAttribute:
+                                property.DeclaringType.ContainingEntityType.AddCheckConstraint(
+                                    $"CK_{tableName}_{columnName}_Phone",
+                                    GenerateRegexSql(columnName, _phoneRegex));
+                                continue;
+
+                            case CreditCardAttribute:
+                                property.DeclaringType.ContainingEntityType.AddCheckConstraint(
+                                    $"CK_{tableName}_{columnName}_CreditCard",
+                                    GenerateRegexSql(columnName, _creditCardRegex));
+                                continue;
+
+                            case EmailAddressAttribute:
+                                property.DeclaringType.ContainingEntityType.AddCheckConstraint(
+                                    $"CK_{tableName}_{columnName}_EmailAddress",
+                                    GenerateRegexSql(columnName, _emailAddressRegex));
+                                continue;
+
+                            case UrlAttribute:
+                                property.DeclaringType.ContainingEntityType.AddCheckConstraint(
+                                    $"CK_{tableName}_{columnName}_Url",
+                                    GenerateRegexSql(columnName, _urlRegex));
+                                continue;
+
+                            case RegularExpressionAttribute a:
+                                property.DeclaringType.ContainingEntityType.AddCheckConstraint(
+                                    $"CK_{tableName}_{columnName}_RegularExpression",
+                                    GenerateRegexSql(columnName, a.Pattern));
+                                continue;
+                        }
+                    }
                 }
             }
         }
@@ -100,15 +145,11 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     protected virtual void ProcessRange(
         IConventionProperty property,
         MemberInfo memberInfo,
+        RangeAttribute attribute,
         string tableName,
         string columnName,
         StringBuilder sql)
     {
-        if (!(memberInfo.GetCustomAttribute<RangeAttribute>() is RangeAttribute attribute))
-        {
-            return;
-        }
-
         var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping() ?? _typeMappingSource.FindMapping((IProperty)property);
 
         if (typeMapping is null
@@ -133,48 +174,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
         property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
     }
 
-    protected virtual void ProcessMinLength(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (_intTypeMapping is not null && memberInfo.GetCustomAttribute<MinLengthAttribute>()?.Length is int minLength)
-        {
-            ProcessMinimumLengthInternal(property, memberInfo, tableName, columnName, sql, minLength);
-        }
-    }
-
-    protected virtual void ProcessStringLengthMinimumLength(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (_intTypeMapping is not null && memberInfo.GetCustomAttribute<StringLengthAttribute>()?.MinimumLength is int minLength)
-        {
-            ProcessMinimumLengthInternal(property, memberInfo, tableName, columnName, sql, minLength);
-        }
-    }
-
-    protected virtual void ProcessRequiredAllowEmptyStrings(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (_intTypeMapping is not null
-            && memberInfo.GetCustomAttribute<RequiredAttribute>()?.AllowEmptyStrings is false
-            && memberInfo.GetMemberType() == typeof(string))
-        {
-            ProcessMinimumLengthInternal(property, memberInfo, tableName, columnName, sql, 1);
-        }
-    }
-
-    protected virtual void ProcessMinimumLengthInternal(
+    protected virtual void AddMinimumLengthConstraint(
         IConventionProperty property,
         MemberInfo memberInfo,
         string tableName,
@@ -191,7 +191,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
             _ => null
         };
 
-        if (lengthFunctionName is null)
+        if (lengthFunctionName is null || _intTypeMapping is null)
         {
             return;
         }
@@ -208,81 +208,6 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
         var constraintName = $"CK_{tableName}_{columnName}_MinLength";
         property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
-    }
-
-    protected virtual void ProcessPhoneNumber(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (memberInfo.GetCustomAttribute<PhoneAttribute>() != null)
-        {
-            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
-                $"CK_{tableName}_{columnName}_Phone",
-                GenerateRegexSql(columnName, _phoneRegex));
-        }
-    }
-
-    protected virtual void ProcessCreditCard(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (memberInfo.GetCustomAttribute<CreditCardAttribute>() != null)
-        {
-            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
-                $"CK_{tableName}_{columnName}_CreditCard",
-                GenerateRegexSql(columnName, _creditCardRegex));
-        }
-    }
-
-    protected virtual void ProcessEmailAddress(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (memberInfo.GetCustomAttribute<EmailAddressAttribute>() != null)
-        {
-            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
-                $"CK_{tableName}_{columnName}_EmailAddress",
-                GenerateRegexSql(columnName, _emailAddressRegex));
-        }
-    }
-
-    protected virtual void ProcessUrl(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (memberInfo.GetCustomAttribute<UrlAttribute>() != null)
-        {
-            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
-                $"CK_{tableName}_{columnName}_Url",
-                GenerateRegexSql(columnName, _urlRegex));
-        }
-    }
-
-    protected virtual void ProcessRegularExpression(
-        IConventionProperty property,
-        MemberInfo memberInfo,
-        string tableName,
-        string columnName,
-        StringBuilder sql)
-    {
-        if (memberInfo.GetCustomAttribute<RegularExpressionAttribute>()?.Pattern is string pattern)
-        {
-            property.DeclaringType.ContainingEntityType.AddCheckConstraint(
-                $"CK_{tableName}_{columnName}_RegularExpression",
-                GenerateRegexSql(columnName, pattern));
-        }
     }
 
     protected virtual string GenerateRegexSql(string columnName, [RegexPattern] string regex)
