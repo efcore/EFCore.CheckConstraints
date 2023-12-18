@@ -23,13 +23,33 @@ public class ValidationCheckConstraintTest
 
         var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Rating_Range");
         Assert.NotNull(ratingCheckConstraint);
-        Assert.Equal("[Rating] >= 1 AND [Rating] <= 5", ratingCheckConstraint.Sql);
+        Assert.Equal("[Rating] BETWEEN 1 AND 5", ratingCheckConstraint.Sql);
 
         var longitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Longitude_Range");
-        Assert.Equal("[Location_Longitude] >= -180.0E0 AND [Location_Longitude] <= 180.0E0", longitudeCheckConstraint.Sql);
+        Assert.Equal("[Location_Longitude] BETWEEN -180.0E0 AND 180.0E0", longitudeCheckConstraint.Sql);
 
         var latitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Latitude_Range");
-        Assert.Equal("[Location_Latitude] >= -90.0E0 AND [Location_Latitude] <= 90.0E0", latitudeCheckConstraint.Sql);
+        Assert.Equal("[Location_Latitude] BETWEEN -90.0E0 AND 90.0E0", latitudeCheckConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void RangeWithExclusiveMinimum()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeWithExclusiveMinimum_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeWithExclusiveMinimum] > 1 AND [RangeWithExclusiveMinimum] <= 5", ratingCheckConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void RangeWithExclusiveMaximum()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeWithExclusiveMaximum_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeWithExclusiveMaximum] >= 1 AND [RangeWithExclusiveMaximum] < 5", ratingCheckConstraint.Sql);
     }
 
     [Fact]
@@ -53,19 +73,13 @@ public class ValidationCheckConstraintTest
     }
 
     [Fact]
-    public void RequiredInt()
+    public void StringWithLength()
     {
         var entityType = BuildEntityType<Blog>();
 
-        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredInt_MinLength");
-    }
-
-    [Fact]
-    public void RequiredIntWithAllowEmptyStringsFalse()
-    {
-        var entityType = BuildEntityType<Blog>();
-
-        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredIntWithAllowEmptyStringsFalse_MinLength");
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_StringWithLength_MinMaxLength");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("LEN([StringWithLength]) BETWEEN 2 AND 5", checkConstraint.Sql);
     }
 
     [Fact]
@@ -84,6 +98,26 @@ public class ValidationCheckConstraintTest
         var entityType = BuildEntityType<Blog>();
 
         Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredAllowEmptyStringsTrue_MinLength");
+    }
+
+    [Fact]
+    public void RequiredValues()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_AllowedValues_AllowedValues");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("[AllowedValues] IN (N'foo', N'bar')", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void DeniedValues()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_DeniedValues_DeniedValues");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("[DeniedValues] NOT IN (N'foo', N'bar')", checkConstraint.Sql);
     }
 
     [Fact]
@@ -162,38 +196,47 @@ public class ValidationCheckConstraintTest
         [Range(1, 5)]
         public int Rating { get; set; }
 
+        [Range(1, 5, MinimumIsExclusive = true)]
+        public int RangeWithExclusiveMinimum { get; set; }
+
+        [Range(1, 5, MaximumIsExclusive = true)]
+        public int RangeWithExclusiveMaximum { get; set; }
+
         [MinLength(4)]
         public string Name { get; set; } = null!;
 
+        [Length(2, 5)]
+        public required string StringWithLength { get; set; }
+
         [StringLength(100, MinimumLength = 1)]
-        public string Required { get; set; } = null!;
-
-        [Required]
-        public int RequiredInt { get; set; }
+        public required string Required { get; set; }
 
         [Required(AllowEmptyStrings = false)]
-        public int RequiredIntWithAllowEmptyStringsFalse { get; set; }
-
-        [Required(AllowEmptyStrings = false)]
-        public string RequiredAllowEmptyStringsFalse { get; set; } = null!;
+        public required string RequiredAllowEmptyStringsFalse { get; set; }
 
         [Required(AllowEmptyStrings = true)]
-        public string RequiredAllowEmptyStringsTrue { get; set; } = null!;
+        public required string RequiredAllowEmptyStringsTrue { get; set; }
+
+        [AllowedValues("foo", "bar")]
+        public required string AllowedValues { get; set; }
+
+        [DeniedValues("foo", "bar")]
+        public required string DeniedValues { get; set; }
 
         [Phone]
-        public string PhoneNumber { get; set; } = null!;
+        public required string PhoneNumber { get; set; }
 
         [CreditCard]
-        public string CreditCard { get; set; } = null!;
+        public required string CreditCard { get; set; }
 
         [EmailAddress]
-        public string Email { get; set; } = null!;
+        public required string Email { get; set; }
 
         [Url]
-        public string Address { get; set; } = null!;
+        public required string Address { get; set; }
 
         [RegularExpression("^A")]
-        public string StartsWithA { get; set; } = null!;
+        public required string StartsWithA { get; set; }
 
         public required Location Location { get; set; }
     }
