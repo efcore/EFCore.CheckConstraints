@@ -24,12 +24,6 @@ public class ValidationCheckConstraintTest
         var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Rating_Range");
         Assert.NotNull(ratingCheckConstraint);
         Assert.Equal("[Rating] BETWEEN 1 AND 5", ratingCheckConstraint.Sql);
-
-        var longitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Longitude_Range");
-        Assert.Equal("[Location_Longitude] BETWEEN -180.0E0 AND 180.0E0", longitudeCheckConstraint.Sql);
-
-        var latitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Latitude_Range");
-        Assert.Equal("[Location_Latitude] BETWEEN -90.0E0 AND 90.0E0", latitudeCheckConstraint.Sql);
     }
 
     [Fact]
@@ -184,6 +178,18 @@ public class ValidationCheckConstraintTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_StartsWithA_RegularExpression");
         Assert.NotNull(checkConstraint);
         Assert.Equal("dbo.RegexMatch('^A', [StartsWithA])", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void Properties_on_complex_type()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var longitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Longitude_Range");
+        Assert.Equal("[Location_Longitude] BETWEEN -180.0E0 AND 180.0E0", longitudeCheckConstraint.Sql);
+
+        var latitudeCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Location_Latitude_Range");
+        Assert.Equal("[Location_Latitude] BETWEEN -90.0E0 AND 90.0E0", latitudeCheckConstraint.Sql);
     }
 
     #region Support
