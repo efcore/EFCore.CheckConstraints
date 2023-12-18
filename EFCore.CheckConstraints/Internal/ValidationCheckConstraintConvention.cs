@@ -85,7 +85,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                     switch (attribute)
                     {
                         case RangeAttribute a:
-                            ProcessRange(property, memberInfo, a, tableName, columnName, sql);
+                            AddRangeConstraint(property, memberInfo, a, tableName, columnName, sql);
                             continue;
 
                         case MinLengthAttribute a when _intTypeMapping is not null:
@@ -96,9 +96,23 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                             AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, a.MinimumLength);
                             continue;
 
-                        case RequiredAttribute { AllowEmptyStrings: false }
-                            when _intTypeMapping is not null && memberInfo.GetMemberType() == typeof(string):
+                        case RequiredAttribute { AllowEmptyStrings: false } when _intTypeMapping is not null:
                             AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, minLength: 1);
+                            continue;
+
+                        case LengthAttribute a when _intTypeMapping is not null:
+                            // Note: The max length should be enforced by the column schema definition in EF,
+                            // see https://github.com/dotnet/efcore/issues/30754. While that isn't done, we enforce it via the check
+                            // constraint.
+                            AddStringLengthConstraint(property, memberInfo, tableName, columnName, sql, a.MinimumLength, a.MaximumLength);
+                            continue;
+
+                        case AllowedValuesAttribute a:
+                            AddListOfValuesConstraint(property, memberInfo, tableName, columnName, sql, a.Values, negated: false);
+                            continue;
+
+                        case DeniedValuesAttribute a:
+                            AddListOfValuesConstraint(property, memberInfo, tableName, columnName, sql, a.Values, negated: true);
                             continue;
                     }
 
@@ -142,7 +156,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
         }
     }
 
-    protected virtual void ProcessRange(
+    protected virtual void AddRangeConstraint(
         IConventionProperty property,
         MemberInfo memberInfo,
         RangeAttribute attribute,
@@ -161,14 +175,26 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
         sql.Clear();
 
-        sql
-            .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
-            .Append(" >= ")
-            .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum))
-            .Append(" AND ")
-            .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
-            .Append(" <= ")
-            .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+        if (attribute is { MinimumIsExclusive: false, MaximumIsExclusive: false })
+        {
+            sql
+                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                .Append(" BETWEEN ")
+                .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum))
+                .Append(" AND ")
+                .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+        }
+        else
+        {
+            sql
+                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                .Append(attribute.MinimumIsExclusive ? " > " : " >= ")
+                .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum))
+                .Append(" AND ")
+                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                .Append(attribute.MaximumIsExclusive ? " < " : " <= ")
+                .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+        }
 
         var constraintName = $"CK_{tableName}_{columnName}_Range";
         property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
@@ -207,6 +233,89 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
             .Append(_intTypeMapping.GenerateSqlLiteral(minLength));
 
         var constraintName = $"CK_{tableName}_{columnName}_MinLength";
+        property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
+    }
+
+    protected virtual void AddStringLengthConstraint(
+        IConventionProperty property,
+        MemberInfo memberInfo,
+        string tableName,
+        string columnName,
+        StringBuilder sql,
+        int minLength,
+        int maxLength)
+    {
+        var lengthFunctionName = _databaseProvider.Name switch
+        {
+            SqlServerDatabaseProviderName => "LEN",
+            SqliteDatabaseProviderName => "LENGTH",
+            PostgreSqlDatabaseProviderName => "LENGTH",
+            MySqlDatabaseProviderName => "LENGTH",
+            _ => null
+        };
+
+        if (lengthFunctionName is null || _intTypeMapping is null)
+        {
+            return;
+        }
+
+        sql.Clear();
+
+        sql
+            .Append(lengthFunctionName)
+            .Append('(')
+            .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+            .Append(')')
+            .Append(" BETWEEN ")
+            .Append(_intTypeMapping.GenerateSqlLiteral(minLength))
+            .Append(" AND ")
+            .Append(_intTypeMapping.GenerateSqlLiteral(maxLength));
+
+        var constraintName = $"CK_{tableName}_{columnName}_MinMaxLength";
+        property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
+    }
+
+    protected virtual void AddListOfValuesConstraint(
+            IConventionProperty property,
+            MemberInfo memberInfo,
+            string tableName,
+            string columnName,
+            StringBuilder sql,
+            object?[] values,
+            bool negated)
+    {
+        var typeMapping = (RelationalTypeMapping?)property.FindTypeMapping() ?? _typeMappingSource.FindMapping((IProperty)property);
+
+        if (typeMapping is null)
+        {
+            return;
+        }
+
+        sql.Clear();
+
+        sql
+            .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+            .Append(negated ? " NOT IN (" : " IN (");
+
+        for (var i = 0; i < values.Length; i++)
+        {
+            var value = values[i];
+            if (value is not null && value.GetType() != typeMapping.ClrType)
+            {
+                return;
+            }
+
+            if (i > 0)
+            {
+                sql.Append(", ");
+            }
+
+            sql.Append(typeMapping.GenerateSqlLiteral(value));
+        }
+
+        sql.Append(')');
+
+        var constraintName = $"CK_{tableName}_{columnName}_{(negated ? "Denied" : "Allowed")}Values";
         property.DeclaringType.ContainingEntityType.AddCheckConstraint(constraintName, sql.ToString());
     }
 
