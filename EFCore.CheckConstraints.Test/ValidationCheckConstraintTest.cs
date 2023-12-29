@@ -130,7 +130,7 @@ public class ValidationCheckConstraintTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_PhoneNumber_Phone");
         Assert.NotNull(checkConstraint);
         Assert.Equal(
-            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultPhoneRegex}', [PhoneNumber])",
+            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultPhoneRegex}', [PhoneNumber]) > 0",
             checkConstraint.Sql);
     }
 
@@ -142,7 +142,7 @@ public class ValidationCheckConstraintTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_CreditCard_CreditCard");
         Assert.NotNull(checkConstraint);
         Assert.Equal(
-            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultCreditCardRegex}', [CreditCard])",
+            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultCreditCardRegex}', [CreditCard]) > 0",
             checkConstraint.Sql);
     }
 
@@ -154,7 +154,7 @@ public class ValidationCheckConstraintTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Email_EmailAddress");
         Assert.NotNull(checkConstraint);
         Assert.Equal(
-            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultEmailAddressRegex}', [Email])",
+            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultEmailAddressRegex}', [Email]) > 0",
             checkConstraint.Sql);
     }
 
@@ -166,7 +166,7 @@ public class ValidationCheckConstraintTest
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_Address_Url");
         Assert.NotNull(checkConstraint);
         Assert.Equal(
-            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultUrlAddressRegex}', [Address])",
+            $"dbo.RegexMatch('{ValidationCheckConstraintConvention.DefaultUrlAddressRegex}', [Address]) > 0",
             checkConstraint.Sql);
     }
 
@@ -177,7 +177,7 @@ public class ValidationCheckConstraintTest
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_StartsWithA_RegularExpression");
         Assert.NotNull(checkConstraint);
-        Assert.Equal("dbo.RegexMatch('^A', [StartsWithA])", checkConstraint.Sql);
+        Assert.Equal("dbo.RegexMatch('^A', [StartsWithA]) > 0", checkConstraint.Sql);
     }
 
     [Fact]
