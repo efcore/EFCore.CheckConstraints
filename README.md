@@ -144,6 +144,14 @@ public class Sibling2 : Parent
 {
     // ...
 }
+
+public class MyContext : DbContext
+{
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder
+            .UseSqlServer(...)
+            .UseDiscriminatorCheckConstraints();
+}
 ```
 
 This will cause the following table to be created:
