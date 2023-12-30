@@ -75,6 +75,8 @@ To disable generating regular expression constraints from the corresponding data
 
 public class MyContext : DbContext
 {
+    public DbSet<Blog> Blogs { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder
             .UseSqlServer(...)
@@ -103,6 +105,8 @@ public enum OrderStatus
 
 public class MyContext : DbContext
 {
+    public DbSet<Order> Orders { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder
             .UseSqlServer(...)
@@ -113,11 +117,11 @@ public class MyContext : DbContext
 This will cause the following table to be created:
 
 ```sql
-CREATE TABLE [Order] (
+CREATE TABLE [Orders] (
     [Id] int NOT NULL IDENTITY,
     [OrderStatus] int NOT NULL,
-    CONSTRAINT [PK_Order] PRIMARY KEY ([Id]),
-    CONSTRAINT [CK_Order_OrderStatus_Enum_Constraint] CHECK ([OrderStatus] IN (0, 1))
+    CONSTRAINT [PK_Orders] PRIMARY KEY ([Id]),
+    CONSTRAINT [CK_Orders_OrderStatus_Enum] CHECK ([OrderStatus] IN (0, 1))
 );
 ```
 
@@ -132,6 +136,7 @@ In the typical case, your hierarchy will have a closed set of .NET types; but as
 ```c#
 public class Parent
 {
+    public int Id { get; set; }
     // ...
 }
 
@@ -144,16 +149,30 @@ public class Sibling2 : Parent
 {
     // ...
 }
+
+public class MyContext : DbContext
+{
+    public DbSet<Parent> Parents { get; set; }
+    public DbSet<Sibling1> Sibling1s { get; set; }
+    public DbSet<Sibling2> Sibling2s { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .UseSqlServer(...)
+            .UseDiscriminatorCheckConstraints();
+    }
+}
 ```
 
 This will cause the following table to be created:
 
 ```sql
-CREATE TABLE [Parent] (
+CREATE TABLE [Parents] (
     [Id] int NOT NULL IDENTITY,
-    [Discriminator] nvarchar(max) NOT NULL,
-    CONSTRAINT [PK_Parent] PRIMARY KEY ([Id]),
-    CONSTRAINT [CK_Parent_Discriminator_Constraint] CHECK ([Discriminator] IN (N'Parent', N'Sibling1', N'Sibling2'))
+    [Discriminator] nvarchar(8) NOT NULL,
+    CONSTRAINT [PK_Parents] PRIMARY KEY ([Id]),
+    CONSTRAINT [CK_Parents_Discriminator] CHECK ([Discriminator] IN (N'Parent', N'Sibling1', N'Sibling2'))
 );
 ```
 
