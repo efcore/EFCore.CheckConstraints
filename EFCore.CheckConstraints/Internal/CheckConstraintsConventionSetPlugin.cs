@@ -12,19 +12,22 @@ public class CheckConstraintsConventionSetPlugin : IConventionSetPlugin
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
     private readonly IRelationalTypeMappingSource _relationalTypeMappingSource;
     private readonly IDatabaseProvider _databaseProvider;
+    private readonly IDbContextOptions _dbContextOptions;
 
     public CheckConstraintsConventionSetPlugin(
         IDbContextOptions options,
         IRelationalTypeMappingSource typeMappingSource,
         ISqlGenerationHelper sqlGenerationHelper,
         IRelationalTypeMappingSource relationalTypeMappingSource,
-        IDatabaseProvider databaseProvider)
+        IDatabaseProvider databaseProvider,
+        IDbContextOptions dbContextOptions)
     {
         _options = options;
         _typeMappingSource = typeMappingSource;
         _sqlGenerationHelper = sqlGenerationHelper;
         _relationalTypeMappingSource = relationalTypeMappingSource;
         _databaseProvider = databaseProvider;
+        _dbContextOptions = dbContextOptions;
     }
 
     public ConventionSet ModifyConventions(ConventionSet conventionSet)
@@ -50,7 +53,7 @@ public class CheckConstraintsConventionSetPlugin : IConventionSetPlugin
                 conventionSet.ModelFinalizingConventions.Add(
                     new ValidationCheckConstraintConvention(
                         extension.ValidationCheckConstraintOptions!, _typeMappingSource, _sqlGenerationHelper,
-                        _relationalTypeMappingSource, _databaseProvider));
+                        _relationalTypeMappingSource, _databaseProvider, _dbContextOptions));
             }
         }
 
