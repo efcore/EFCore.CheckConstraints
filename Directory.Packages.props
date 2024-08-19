@@ -3,12 +3,10 @@
     <EFCoreVersion>[8.0.0,9.0.0)</EFCoreVersion>
     <MicrosoftExtensionsVersion>8.0.1</MicrosoftExtensionsVersion>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EFCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EFCoreVersion)" />
-
     <!-- Test -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EFCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Specification.Tests" Version="$(EFCoreVersion)" />
