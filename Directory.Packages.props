@@ -1,7 +1,6 @@
 <Project>
   <PropertyGroup>
-    <EFCoreVersion>[8.0.0,9.0.0)</EFCoreVersion>
-    <MicrosoftExtensionsVersion>8.0.1</MicrosoftExtensionsVersion>
+    <EFCoreVersion>[9.0.0,10.0.0)</EFCoreVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
