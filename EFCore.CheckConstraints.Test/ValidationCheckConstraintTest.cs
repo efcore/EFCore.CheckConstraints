@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
@@ -181,6 +182,16 @@ public class ValidationCheckConstraintTest
     }
 
     [Fact]
+    public virtual void RegularExpressionNavtiveMethod()
+    {
+        var entityType = BuildEntityType<Blog>(isAzureSql: true);
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_StartsWithA_RegularExpression");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("REGEXP_LIKE ([StartsWithA], '^A')", checkConstraint.Sql);
+    }
+
+    [Fact]
     public virtual void Properties_on_complex_type()
     {
         var entityType = BuildEntityType<Blog>();
@@ -258,9 +269,20 @@ public class ValidationCheckConstraintTest
         public double Latitude { get; set; }
     }
 
-    private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex)
+    private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex, bool isAzureSql)
     {
         var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+
+        var dbContextOptions = serviceProvider.GetRequiredService<IDbContextOptions>();
+
+        var sqlServerOptionsExtension = dbContextOptions.Extensions
+            .Where(o => o.GetType().Name == "SqlServerOptionsExtension")
+            .FirstOrDefault();
+
+        sqlServerOptionsExtension!.GetType()
+            .GetField("_azureSql", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+            .SetValue(sqlServerOptionsExtension, isAzureSql);
+
         var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
         conventionSet.ModelFinalizingConventions.Add(
@@ -269,20 +291,21 @@ public class ValidationCheckConstraintTest
                 serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
                 serviceProvider.GetRequiredService<ISqlGenerationHelper>(),
                 serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
-                serviceProvider.GetRequiredService<IDatabaseProvider>()));
+                serviceProvider.GetRequiredService<IDatabaseProvider>(),
+                dbContextOptions));
 
         var builder = new ModelBuilder(conventionSet);
         buildAction(builder);
         return builder.FinalizeModel();
     }
 
-    private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true)
+    private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true, bool isAzureSql = false)
         where TEntity : class
     {
         return BuildModel(buildAction is null
                 ? b => b.Entity<TEntity>()
                 : b => buildAction(b.Entity<TEntity>()),
-            useRegex).GetEntityTypes().Single();
+            useRegex, isAzureSql).GetEntityTypes().Single();
     }
 
     #endregion
