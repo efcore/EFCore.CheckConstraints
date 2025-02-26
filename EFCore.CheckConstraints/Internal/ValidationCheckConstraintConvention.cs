@@ -80,6 +80,9 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                     continue;
                 }
 
+                int? minLength = null;
+                int? maxLength = null;
+
                 foreach (var attribute in memberInfo.GetCustomAttributes())
                 {
                     switch (attribute)
@@ -89,22 +92,24 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                             continue;
 
                         case MinLengthAttribute a when _intTypeMapping is not null:
-                            AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, a.Length);
+                            minLength = minLength is null ? a.Length : Math.Max(a.Length, minLength.Value);
                             continue;
 
                         case StringLengthAttribute a when _intTypeMapping is not null:
-                            AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, a.MinimumLength);
+                            minLength = minLength is null ? a.MinimumLength : Math.Max(a.MinimumLength, minLength.Value);
                             continue;
 
-                        case RequiredAttribute { AllowEmptyStrings: false } when _intTypeMapping is not null:
-                            AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, minLength: 1);
+                        case RequiredAttribute { AllowEmptyStrings: false }
+                            when _intTypeMapping is not null && memberInfo.GetMemberType() == typeof(string):
+                            minLength = minLength is null ? 1 : Math.Max(1, minLength.Value);
                             continue;
 
                         case LengthAttribute a when _intTypeMapping is not null:
                             // Note: The max length should be enforced by the column schema definition in EF,
                             // see https://github.com/dotnet/efcore/issues/30754. While that isn't done, we enforce it via the check
                             // constraint.
-                            AddStringLengthConstraint(property, memberInfo, tableName, columnName, sql, a.MinimumLength, a.MaximumLength);
+                            minLength = minLength is null ? a.MinimumLength : Math.Max(a.MinimumLength, minLength.Value);
+                            maxLength = maxLength is null ? a.MaximumLength : Math.Min(a.MaximumLength, maxLength.Value);
                             continue;
 
                         case AllowedValuesAttribute a:
@@ -151,6 +156,27 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                                 continue;
                         }
                     }
+                }
+
+                if (minLength is null)
+                {
+                    continue;
+                }
+
+                if (maxLength is not null)
+                {
+                    if (minLength.Value > maxLength.Value)
+                    {
+                        throw new InvalidOperationException(
+                            $"The minimum length ({minLength}) specified for [{tableName}].[{columnName}] exceeds the maximum allowable length ({maxLength})."
+                        );
+                    }
+
+                    AddStringLengthConstraint(property, memberInfo, tableName, columnName, sql, minLength.Value, maxLength.Value);
+                }
+                else
+                {
+                    AddMinimumLengthConstraint(property, memberInfo, tableName, columnName, sql, minLength.Value);
                 }
             }
         }
