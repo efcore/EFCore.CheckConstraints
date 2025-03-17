@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/build.yml" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
+  <Project Path="EFCore.CheckConstraints.Test/EFCore.CheckConstraints.Test.csproj" />
+  <Project Path="EFCore.CheckConstraints/EFCore.CheckConstraints.csproj" />
+</Solution>
