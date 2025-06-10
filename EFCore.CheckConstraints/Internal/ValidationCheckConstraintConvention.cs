@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
@@ -30,9 +31,10 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     private readonly IRelationalTypeMappingSource _typeMappingSource;
     private readonly ISqlGenerationHelper _sqlGenerationHelper;
     private readonly IDatabaseProvider _databaseProvider;
+    private readonly IDbContextOptions _dbContextOptions;
     private readonly RelationalTypeMapping? _intTypeMapping;
 
-    private readonly bool _useRegex;
+    private readonly bool _useRegex, _isSqlServerNativeMethod;
     private readonly string _phoneRegex, _creditCardRegex, _emailAddressRegex, _urlRegex;
 
     public ValidationCheckConstraintConvention(
@@ -40,11 +42,13 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
         IRelationalTypeMappingSource typeMappingSource,
         ISqlGenerationHelper sqlGenerationHelper,
         IRelationalTypeMappingSource relationalTypeMappingSource,
-        IDatabaseProvider databaseProvider)
+        IDatabaseProvider databaseProvider,
+        IDbContextOptions dbContextOptions)
     {
         _typeMappingSource = typeMappingSource;
         _sqlGenerationHelper = sqlGenerationHelper;
         _databaseProvider = databaseProvider;
+        _dbContextOptions = dbContextOptions;
         _intTypeMapping = relationalTypeMappingSource.FindMapping(typeof(int))!;
 
         _useRegex = options.UseRegex && SupportsRegex;
@@ -52,6 +56,23 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
         _creditCardRegex = options.CreditCardRegex ?? DefaultCreditCardRegex;
         _emailAddressRegex = options.EmailAddressRegex ?? DefaultEmailAddressRegex;
         _urlRegex = options.UrlRegex ?? DefaultUrlAddressRegex;
+
+        var sqlServerOptionsExtension  = _dbContextOptions.Extensions
+            .Where(o => o.GetType().Name == "SqlServerOptionsExtension")
+            .FirstOrDefault();
+
+        if (sqlServerOptionsExtension != null)
+        {
+            var engineType = sqlServerOptionsExtension.GetType()?.GetProperty("EngineType")?.GetValue(sqlServerOptionsExtension);
+
+            if (engineType?.ToString() is "SqlServer" or "AzureSql")
+            {
+                if (sqlServerOptionsExtension.GetType()?.GetProperty($"{engineType}CompatibilityLevel")?.GetValue(sqlServerOptionsExtension) is >= 170)
+                {
+                    _isSqlServerNativeMethod = true;
+                }
+            }
+        }
     }
 
     public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
@@ -320,17 +341,21 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     }
 
     protected virtual string GenerateRegexSql(string columnName, [RegexPattern] string regex)
-        => string.Format(
+    {
+        return string.Format(
             _databaseProvider.Name switch
             {
                 // For SQL Server, requires setup:
                 // https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench/
-                SqlServerDatabaseProviderName => "dbo.RegexMatch('{1}', {0}) > 0",
+                SqlServerDatabaseProviderName => _isSqlServerNativeMethod
+                    ? "REGEXP_LIKE ({0}, '{1}')"
+                    : "dbo.RegexMatch('{1}', {0}) > 0",
                 SqliteDatabaseProviderName => "{0} REGEXP '{1}'",
                 PostgreSqlDatabaseProviderName => "{0} ~ '{1}'",
                 MySqlDatabaseProviderName => "{0} REGEXP '{1}'",
                 _ => throw new InvalidOperationException($"Provider {_databaseProvider.Name} doesn't support regular expressions")
             }, _sqlGenerationHelper.DelimitIdentifier(columnName), regex);
+    }
 
     protected virtual bool SupportsRegex
         => _databaseProvider.Name switch

@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using EFCore.CheckConstraints.Internal;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
@@ -181,6 +182,16 @@ public class ValidationCheckConstraintTest
     }
 
     [Fact]
+    public virtual void RegularExpressionNavtiveMethodWithAzureSqlAndCompatLevel170()
+    {
+        var entityType = BuildAzureSqlEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_StartsWithA_RegularExpression");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("REGEXP_LIKE ([StartsWithA], '^A')", checkConstraint.Sql);
+    }
+
+    [Fact]
     public virtual void Properties_on_complex_type()
     {
         var entityType = BuildEntityType<Blog>();
@@ -261,6 +272,20 @@ public class ValidationCheckConstraintTest
     private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex)
     {
         var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
+        return BuildIModel(buildAction, useRegex, serviceProvider);
+    }
+
+
+    private IModel BuildAzureSqlModel(Action<ModelBuilder> buildAction, bool useRegex)
+    {
+        var serviceProvider = AzureSqlTestHelpers.Instance.CreateContextServices();
+        return BuildIModel(buildAction, useRegex, serviceProvider);
+    }
+
+    private static IModel BuildIModel(Action<ModelBuilder> buildAction, bool useRegex, IServiceProvider serviceProvider)
+    {
+        var dbContextOptions = serviceProvider.GetRequiredService<IDbContextOptions>();
+
         var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
 
         conventionSet.ModelFinalizingConventions.Add(
@@ -269,17 +294,28 @@ public class ValidationCheckConstraintTest
                 serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
                 serviceProvider.GetRequiredService<ISqlGenerationHelper>(),
                 serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
-                serviceProvider.GetRequiredService<IDatabaseProvider>()));
+                serviceProvider.GetRequiredService<IDatabaseProvider>(),
+                dbContextOptions));
 
         var builder = new ModelBuilder(conventionSet);
         buildAction(builder);
         return builder.FinalizeModel();
     }
 
+
     private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true)
         where TEntity : class
     {
         return BuildModel(buildAction is null
+                ? b => b.Entity<TEntity>()
+                : b => buildAction(b.Entity<TEntity>()),
+            useRegex).GetEntityTypes().Single();
+    }
+
+    private IEntityType BuildAzureSqlEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true)
+        where TEntity : class
+    {
+        return BuildAzureSqlModel(buildAction is null
                 ? b => b.Entity<TEntity>()
                 : b => buildAction(b.Entity<TEntity>()),
             useRegex).GetEntityTypes().Single();
