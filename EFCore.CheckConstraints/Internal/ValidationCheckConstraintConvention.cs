@@ -342,20 +342,14 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
     protected virtual string GenerateRegexSql(string columnName, [RegexPattern] string regex)
     {
-        if (_isSqlServerNativeMethod)
-        {
-            return string.Format(
-                "REGEXP_LIKE ({0}, '{1}')",
-                _sqlGenerationHelper.DelimitIdentifier(columnName),
-                regex);
-        }
-
         return string.Format(
             _databaseProvider.Name switch
             {
                 // For SQL Server, requires setup:
                 // https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench/
-                SqlServerDatabaseProviderName => "dbo.RegexMatch('{1}', {0}) > 0",
+                SqlServerDatabaseProviderName => _isSqlServerNativeMethod
+                    ? string.Format("REGEXP_LIKE ({0}, '{1}')", _sqlGenerationHelper.DelimitIdentifier(columnName), regex)
+                    : "dbo.RegexMatch('{1}', {0}) > 0",
                 SqliteDatabaseProviderName => "{0} REGEXP '{1}'",
                 PostgreSqlDatabaseProviderName => "{0} ~ '{1}'",
                 MySqlDatabaseProviderName => "{0} REGEXP '{1}'",
