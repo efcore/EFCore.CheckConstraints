@@ -329,14 +329,21 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
             .Where(o => o.GetType().Name == "SqlServerOptionsExtension")
             .FirstOrDefault();
 
-        if (sqlServerOptionsExtension is not null
-            && sqlServerOptionsExtension.GetType().GetProperty("IsAzureSql")?.GetValue(sqlServerOptionsExtension) is bool isAzureSql
-            && isAzureSql)
+        if (sqlServerOptionsExtension != null)
         {
-            return string.Format(
-                "REGEXP_LIKE ({0}, '{1}')",
-                _sqlGenerationHelper.DelimitIdentifier(columnName),
-                regex);
+            var engineType = sqlServerOptionsExtension.GetType()?.GetProperty("EngineType")?.GetValue(sqlServerOptionsExtension);
+
+            if (engineType != null && (engineType.ToString() == "SqlServer" || engineType.ToString() == "AzureSql"))
+            {
+                if (sqlServerOptionsExtension.GetType()?.GetProperty($"{engineType}CompatibilityLevel")?.GetValue(sqlServerOptionsExtension) is int compatibilityLevel
+                        && compatibilityLevel >= 170)
+                {
+                    return string.Format(
+                        "REGEXP_LIKE ({0}, '{1}')",
+                        _sqlGenerationHelper.DelimitIdentifier(columnName),
+                        regex);
+                }
+            }
         }
 
         return string.Format(
