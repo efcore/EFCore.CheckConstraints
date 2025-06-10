@@ -184,7 +184,7 @@ public class ValidationCheckConstraintTest
     [Fact]
     public virtual void RegularExpressionNavtiveMethodWithAzureSqlAndCompatLevel170()
     {
-        var entityType = BuildAzureSqlEntityType<Blog>(nativeFunction: true);
+        var entityType = BuildAzureSqlEntityType<Blog>();
 
         var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_StartsWithA_RegularExpression");
         Assert.NotNull(checkConstraint);
@@ -269,32 +269,21 @@ public class ValidationCheckConstraintTest
         public double Latitude { get; set; }
     }
 
-    private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex, bool nativeFunction)
+    private IModel BuildModel(Action<ModelBuilder> buildAction, bool useRegex)
     {
         var serviceProvider = SqlServerTestHelpers.Instance.CreateContextServices();
-
-        var dbContextOptions = serviceProvider.GetRequiredService<IDbContextOptions>();
-
-        var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
-
-        conventionSet.ModelFinalizingConventions.Add(
-            new ValidationCheckConstraintConvention(
-                new ValidationCheckConstraintOptions { UseRegex = useRegex },
-                serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
-                serviceProvider.GetRequiredService<ISqlGenerationHelper>(),
-                serviceProvider.GetRequiredService<IRelationalTypeMappingSource>(),
-                serviceProvider.GetRequiredService<IDatabaseProvider>(),
-                dbContextOptions));
-
-        var builder = new ModelBuilder(conventionSet);
-        buildAction(builder);
-        return builder.FinalizeModel();
+        return BuildIModel(buildAction, useRegex, serviceProvider);
     }
 
-    private IModel BuildAzureSqlModel(Action<ModelBuilder> buildAction, bool useRegex, bool nativeFunction)
+
+    private IModel BuildAzureSqlModel(Action<ModelBuilder> buildAction, bool useRegex)
     {
         var serviceProvider = AzureSqlTestHelpers.Instance.CreateContextServices();
+        return BuildIModel(buildAction, useRegex, serviceProvider);
+    }
 
+    private static IModel BuildIModel(Action<ModelBuilder> buildAction, bool useRegex, IServiceProvider serviceProvider)
+    {
         var dbContextOptions = serviceProvider.GetRequiredService<IDbContextOptions>();
 
         var conventionSet = serviceProvider.GetRequiredService<IConventionSetBuilder>().CreateConventionSet();
@@ -313,22 +302,23 @@ public class ValidationCheckConstraintTest
         return builder.FinalizeModel();
     }
 
-    private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true, bool nativeFunction = false)
+
+    private IEntityType BuildEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true)
         where TEntity : class
     {
         return BuildModel(buildAction is null
                 ? b => b.Entity<TEntity>()
                 : b => buildAction(b.Entity<TEntity>()),
-            useRegex, nativeFunction).GetEntityTypes().Single();
+            useRegex).GetEntityTypes().Single();
     }
 
-    private IEntityType BuildAzureSqlEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true, bool nativeFunction = false)
+    private IEntityType BuildAzureSqlEntityType<TEntity>(Action<EntityTypeBuilder<TEntity>>? buildAction = null, bool useRegex = true)
         where TEntity : class
     {
         return BuildAzureSqlModel(buildAction is null
                 ? b => b.Entity<TEntity>()
                 : b => buildAction(b.Entity<TEntity>()),
-            useRegex, nativeFunction).GetEntityTypes().Single();
+            useRegex).GetEntityTypes().Single();
     }
 
     #endregion
