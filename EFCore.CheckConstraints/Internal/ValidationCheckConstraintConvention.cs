@@ -34,7 +34,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
     private readonly IDbContextOptions _dbContextOptions;
     private readonly RelationalTypeMapping? _intTypeMapping;
 
-    private readonly bool _useRegex;
+    private readonly bool _useRegex, _isSqlServerNativeMethod;
     private readonly string _phoneRegex, _creditCardRegex, _emailAddressRegex, _urlRegex;
 
     public ValidationCheckConstraintConvention(
@@ -56,6 +56,23 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
         _creditCardRegex = options.CreditCardRegex ?? DefaultCreditCardRegex;
         _emailAddressRegex = options.EmailAddressRegex ?? DefaultEmailAddressRegex;
         _urlRegex = options.UrlRegex ?? DefaultUrlAddressRegex;
+
+        var sqlServerOptionsExtension  = _dbContextOptions.Extensions
+            .Where(o => o.GetType().Name == "SqlServerOptionsExtension")
+            .FirstOrDefault();
+
+        if (sqlServerOptionsExtension != null)
+        {
+            var engineType = sqlServerOptionsExtension.GetType()?.GetProperty("EngineType")?.GetValue(sqlServerOptionsExtension);
+
+            if (engineType?.ToString() is "SqlServer" or "AzureSql")
+            {
+                if (sqlServerOptionsExtension.GetType()?.GetProperty($"{engineType}CompatibilityLevel")?.GetValue(sqlServerOptionsExtension) is >= 170)
+                {
+                    _isSqlServerNativeMethod = true;
+                }
+            }
+        }
     }
 
     public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
@@ -325,25 +342,12 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
     protected virtual string GenerateRegexSql(string columnName, [RegexPattern] string regex)
     {
-        var sqlServerOptionsExtension  = _dbContextOptions.Extensions
-            .Where(o => o.GetType().Name == "SqlServerOptionsExtension")
-            .FirstOrDefault();
-
-        if (sqlServerOptionsExtension != null)
+        if (_isSqlServerNativeMethod)
         {
-            var engineType = sqlServerOptionsExtension.GetType()?.GetProperty("EngineType")?.GetValue(sqlServerOptionsExtension);
-
-            if (engineType != null && (engineType.ToString() == "SqlServer" || engineType.ToString() == "AzureSql"))
-            {
-                if (sqlServerOptionsExtension.GetType()?.GetProperty($"{engineType}CompatibilityLevel")?.GetValue(sqlServerOptionsExtension) is int compatibilityLevel
-                        && compatibilityLevel >= 170)
-                {
-                    return string.Format(
-                        "REGEXP_LIKE ({0}, '{1}')",
-                        _sqlGenerationHelper.DelimitIdentifier(columnName),
-                        regex);
-                }
-            }
+            return string.Format(
+                "REGEXP_LIKE ({0}, '{1}')",
+                _sqlGenerationHelper.DelimitIdentifier(columnName),
+                regex);
         }
 
         return string.Format(
