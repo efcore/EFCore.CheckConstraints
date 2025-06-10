@@ -348,7 +348,7 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
                 // For SQL Server, requires setup:
                 // https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench/
                 SqlServerDatabaseProviderName => _isSqlServerNativeMethod
-                    ? string.Format("REGEXP_LIKE ({0}, '{1}')", _sqlGenerationHelper.DelimitIdentifier(columnName), regex)
+                    ? "REGEXP_LIKE ({0}, '{1}')"
                     : "dbo.RegexMatch('{1}', {0}) > 0",
                 SqliteDatabaseProviderName => "{0} REGEXP '{1}'",
                 PostgreSqlDatabaseProviderName => "{0} ~ '{1}'",
