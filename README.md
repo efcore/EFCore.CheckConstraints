@@ -67,7 +67,7 @@ CREATE TABLE "Blogs" (
 );
 ```
 
-Most of the attributes make use of database regular expressions. For SQL Server, this requires some initial setup - [follow these docs](https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench). Note that processing complex regular expressions does have a cost, so consider performance before turning these constraints on for write-intensive applications.
+Most of the attributes make use of database regular expressions. For SQL Server databases with compatibility level 160 or lower, this requires some initial setup - [follow these docs](https://www.red-gate.com/simple-talk/sql/t-sql-programming/tsql-regular-expression-workbench). Note that processing complex regular expressions does have a cost, so consider performance before turning these constraints on for write-intensive applications.
 
 To disable generating regular expression constraints from the corresponding data annotation attributes, set `UseRegex` validation check constraint option to `false`:
 
