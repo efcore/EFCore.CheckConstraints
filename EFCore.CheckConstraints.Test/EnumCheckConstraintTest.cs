@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
+using Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.TestUtilities;
@@ -382,6 +383,9 @@ public class EnumCheckConstraintConventionTest
         {
             base.AddProviderServices(services);
             services.AddSingleton<IRelationalTypeMappingSource, SqlServerTypeMappingSourceWithEnumSupport>();
+#pragma warning disable EF1001 // Internal EF Core API usage.
+            services.AddSingleton<SqlServerSingletonOptions>();
+#pragma warning restore EF1001 // Internal EF Core API usage.
             return services;
         }
     }
@@ -391,8 +395,9 @@ public class EnumCheckConstraintConventionTest
     {
         public SqlServerTypeMappingSourceWithEnumSupport(
             TypeMappingSourceDependencies dependencies,
-            RelationalTypeMappingSourceDependencies relationalDependencies)
-            : base(dependencies, relationalDependencies)
+            RelationalTypeMappingSourceDependencies relationalDependencies,
+            SqlServerSingletonOptions sqlServerSingletonOptions)
+            : base(dependencies, relationalDependencies, sqlServerSingletonOptions)
         {
         }
 
