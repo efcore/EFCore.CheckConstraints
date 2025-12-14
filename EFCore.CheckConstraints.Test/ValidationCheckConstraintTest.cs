@@ -48,6 +48,74 @@ public class ValidationCheckConstraintTest
     }
 
     [Fact]
+    public virtual void RangeWithoutMinimum()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeWithoutMinimum_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeWithoutMinimum] <= 5", ratingCheckConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void RangeWithoutMaximum()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeWithoutMaximum_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeWithoutMaximum] >= 1", ratingCheckConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void RangeAlmostWithoutMinimum()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeAlmostWithoutMinimum_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeAlmostWithoutMinimum] > -2147483648 AND [RangeAlmostWithoutMinimum] <= 5", ratingCheckConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void RangeAlmostWithoutMaximum()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeAlmostWithoutMaximum_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeAlmostWithoutMaximum] >= 1 AND [RangeAlmostWithoutMaximum] < 2147483647", ratingCheckConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void RangeDegenerated()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        Assert.DoesNotContain(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeDegenerated_Range");
+    }
+
+    [Fact]
+    public virtual void RangeAlmostDegenerated()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeAlmostDegenerated_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeAlmostDegenerated] > -2147483648 AND [RangeAlmostDegenerated] < 2147483647", ratingCheckConstraint.Sql);
+    }
+
+    [Fact]
+    public virtual void RangeNonDegeneratedDouble()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var ratingCheckConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RangeNonDegeneratedDouble_Range");
+        Assert.NotNull(ratingCheckConstraint);
+        Assert.Equal("[RangeNonDegeneratedDouble] BETWEEN -2147483648.0E0 AND 2147483647.0E0", ratingCheckConstraint.Sql);
+    }
+
+    [Fact]
     public void MinLength()
     {
         var entityType = BuildEntityType<Blog>();
@@ -218,6 +286,27 @@ public class ValidationCheckConstraintTest
 
         [Range(1, 5, MaximumIsExclusive = true)]
         public int RangeWithExclusiveMaximum { get; set; }
+
+        [Range(int.MinValue, 5)]
+        public int RangeWithoutMinimum { get; set; }
+
+        [Range(1, int.MaxValue)]
+        public int RangeWithoutMaximum { get; set; }
+
+        [Range(int.MinValue, 5, MinimumIsExclusive = true)]
+        public int RangeAlmostWithoutMinimum { get; set; }
+
+        [Range(1, int.MaxValue, MaximumIsExclusive = true)]
+        public int RangeAlmostWithoutMaximum { get; set; }
+
+        [Range(int.MinValue, int.MaxValue)]
+        public int RangeDegenerated { get; set; }
+
+        [Range(int.MinValue, int.MaxValue, MinimumIsExclusive = true, MaximumIsExclusive = true)]
+        public int RangeAlmostDegenerated { get; set; }
+
+        [Range((double)int.MinValue, int.MaxValue)]
+        public double RangeNonDegeneratedDouble { get; set; }
 
         [MinLength(4)]
         public string Name { get; set; } = null!;

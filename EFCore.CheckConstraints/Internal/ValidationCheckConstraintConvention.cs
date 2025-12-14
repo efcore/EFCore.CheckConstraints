@@ -196,7 +196,26 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
         sql.Clear();
 
-        if (attribute is { MinimumIsExclusive: false, MaximumIsExclusive: false })
+        if (!attribute.MinimumIsExclusive && attribute.Minimum.Equals(int.MinValue))
+        {
+            if (!attribute.MaximumIsExclusive && attribute.Maximum.Equals(int.MaxValue))
+            {
+                return;
+            }
+
+            sql
+                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                .Append(attribute.MaximumIsExclusive ? " < " : " <= ")
+                .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+        }
+        else if (!attribute.MaximumIsExclusive && attribute.Maximum.Equals(int.MaxValue))
+        {
+            sql
+                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                .Append(attribute.MinimumIsExclusive ? " > " : " >= ")
+                .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum));
+        }
+        else if (attribute is { MinimumIsExclusive: false, MaximumIsExclusive: false })
         {
             sql
                 .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
