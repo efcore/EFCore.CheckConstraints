@@ -196,44 +196,41 @@ public class ValidationCheckConstraintConvention : IModelFinalizingConvention
 
         sql.Clear();
 
-        if (!attribute.MinimumIsExclusive && attribute.Minimum.Equals(int.MinValue))
+        switch (attribute)
         {
-            if (!attribute.MaximumIsExclusive && attribute.Maximum.Equals(int.MaxValue))
-            {
-                return;
-            }
+            case { Minimum: int.MinValue, MinimumIsExclusive: false }:
+                sql
+                    .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                    .Append(attribute.MaximumIsExclusive ? " < " : " <= ")
+                    .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+                break;
 
-            sql
-                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
-                .Append(attribute.MaximumIsExclusive ? " < " : " <= ")
-                .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
-        }
-        else if (!attribute.MaximumIsExclusive && attribute.Maximum.Equals(int.MaxValue))
-        {
-            sql
-                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
-                .Append(attribute.MinimumIsExclusive ? " > " : " >= ")
-                .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum));
-        }
-        else if (attribute is { MinimumIsExclusive: false, MaximumIsExclusive: false })
-        {
-            sql
-                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
-                .Append(" BETWEEN ")
-                .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum))
-                .Append(" AND ")
-                .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
-        }
-        else
-        {
-            sql
-                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
-                .Append(attribute.MinimumIsExclusive ? " > " : " >= ")
-                .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum))
-                .Append(" AND ")
-                .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
-                .Append(attribute.MaximumIsExclusive ? " < " : " <= ")
-                .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+            case { Maximum: int.MaxValue, MaximumIsExclusive: false }:
+                sql
+                    .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                    .Append(attribute.MinimumIsExclusive ? " > " : " >= ")
+                    .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum));
+                break;
+
+            case { MinimumIsExclusive: false, MaximumIsExclusive: false }:
+                sql
+                    .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                    .Append(" BETWEEN ")
+                    .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum))
+                    .Append(" AND ")
+                    .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+                break;
+
+            default:
+                sql
+                    .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                    .Append(attribute.MinimumIsExclusive ? " > " : " >= ")
+                    .Append(typeMapping.GenerateSqlLiteral(attribute.Minimum))
+                    .Append(" AND ")
+                    .Append(_sqlGenerationHelper.DelimitIdentifier(columnName))
+                    .Append(attribute.MaximumIsExclusive ? " < " : " <= ")
+                    .Append(typeMapping.GenerateSqlLiteral(attribute.Maximum));
+                break;
         }
 
         var constraintName = $"CK_{tableName}_{columnName}_Range";
