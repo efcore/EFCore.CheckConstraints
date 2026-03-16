@@ -243,6 +243,65 @@ public class ValidationCheckConstraintTest
         Assert.Equal("[Location_Latitude] BETWEEN -90.0E0 AND 90.0E0", latitudeCheckConstraint.Sql);
     }
 
+    [Fact]
+    public void RequiredWithMaxStringLength()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredWithMaxStringLength_MinLength");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("LEN([RequiredWithMaxStringLength]) >= 1", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void RequiredWithMinAndMaxStringLength()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredWithMinAndMaxStringLength_MinLength");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("LEN([RequiredWithMinAndMaxStringLength]) >= 3", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void RequiredWithMinLength()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredWithMinLength_MinLength");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("LEN([RequiredWithMinLength]) >= 3", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void RequiredWithLength()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredWithLength_MinMaxLength");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("LEN([RequiredWithLength]) BETWEEN 1 AND 4", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void RequiredWithLengthAndStringLengthAndMinLength()
+    {
+        var entityType = BuildEntityType<Blog>();
+
+        var checkConstraint = Assert.Single(entityType.GetCheckConstraints(), c => c.Name == "CK_Blog_RequiredWithLengthAndStringLengthAndMinLength_MinMaxLength");
+        Assert.NotNull(checkConstraint);
+        Assert.Equal("LEN([RequiredWithLengthAndStringLengthAndMinLength]) BETWEEN 4 AND 10", checkConstraint.Sql);
+    }
+
+    [Fact]
+    public void ShouldThrowWhenDeterminedMaxLengthIsGreaterThanMinLength()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() => BuildEntityType<MinLengthExceedingMaxLength>());
+        Assert.Equal(
+            $"The minimum length (400) specified for [{nameof(MinLengthExceedingMaxLength)}].[{nameof(MinLengthExceedingMaxLength.Property)}] exceeds the maximum allowable length (10).",
+            exception.Message);
+    }
+
     #region Support
 
     // ReSharper disable UnusedMember.Local
@@ -250,6 +309,7 @@ public class ValidationCheckConstraintTest
     {
         public int Id { get; set; }
 
+        [Required]
         [Range(1, 5)]
         public int Rating { get; set; }
 
@@ -308,7 +368,39 @@ public class ValidationCheckConstraintTest
         public required string StartsWithA { get; set; }
 
         public required Location Location { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public required string RequiredWithMaxStringLength { get; set; }
+
+        [Required]
+        [StringLength(100, MinimumLength = 3)]
+        public required string RequiredWithMinAndMaxStringLength { get; set; }
+
+        [Required]
+        [MinLength(3)]
+        public required string RequiredWithMinLength { get; set; }
+
+        [Required]
+        [Length(0, 4)]
+        public required string RequiredWithLength { get; set; }
+
+        [Required]
+        [Length(0, 10)]
+        [StringLength(100, MinimumLength = 3)]
+        [MinLength(4)]
+        public required string RequiredWithLengthAndStringLengthAndMinLength { get; set; }
     }
+
+    class MinLengthExceedingMaxLength
+    {
+        [Required]
+        [Length(0, 10)]
+        [StringLength(100, MinimumLength = 3)]
+        [MinLength(400)]
+        public required string Property { get; set; }
+    }
+
     // ReSharper restore UnusedMember.Local
 
     [ComplexType]
