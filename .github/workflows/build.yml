@@ -13,7 +13,7 @@ jobs:
       - name: Setup .NET Core SDK
         uses: actions/setup-dotnet@v6
         with:
-          global-json-file: global.json
+          dotnet-version: 11.0.100
 
       - name: Test
         run: dotnet test
